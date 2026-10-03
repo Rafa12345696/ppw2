@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  CLIENTE
+  ADMIN
+}
+
+model Usuario {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  nombre        String
+  email         String         @unique
+  password      String?
+  rol           Rol            @default(CLIENTE)
+  refreshTokens RefreshToken[]
+  pedidos       Pedido[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  tokenHash String   @unique
+  usuarioId String   @db.ObjectId
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  revocado  Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Categoria {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  nombre    String     @unique
+  productos Producto[]
+}
+
+model Producto {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  nombre      String
+  precio      Float
+  stock       Int
+  descripcion String
+  imagen      String
+  categoriaId String    @db.ObjectId
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+}
+
+type ItemPedido {
+  productoId String @db.ObjectId
+  nombre     String
+  cantidad   Int
+  precioUnit Float
+}
+
+model Pedido {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  fecha     DateTime     @default(now())
+  estado    String       @default("pendiente")
+  total     Float
+  usuarioId String       @db.ObjectId
+  usuario   Usuario      @relation(fields: [usuarioId], references: [id])
+  detalles  ItemPedido[]
+}

@@ -1,0 +1,106 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Categoria {
+  id: ID!
+  nombre: String!
+  productos: [Producto!]
+}
+
+type Producto {
+  id: ID!
+  nombre: String!
+  precio: Float!
+  stock: Int!
+  descripcion: String!
+  imagen: String!
+  categoriaId: ID!
+  categoria: Categoria
+}
+
+type Usuario {
+  id: ID!
+  nombre: String!
+  email: String!
+  rol: Rol!
+}
+
+enum Rol {
+  CLIENTE
+  ADMIN
+}
+
+type ItemPedidoType {
+  productoId: ID!
+  nombre: String!
+  cantidad: Int!
+  precioUnit: Float!
+}
+
+type Pedido {
+  id: ID!
+  estado: String!
+  total: Float!
+  usuarioId: ID!
+  usuario: Usuario
+  detalles: [ItemPedidoType!]!
+}
+
+type AuthPayload {
+  accessToken: String!
+  usuario: Usuario!
+}
+
+type Query {
+  productos(skip: Int = 0, take: Int = 20): [Producto!]!
+  productoPorId(id: ID!): Producto
+  productosPorCategoria(categoriaId: ID!): [Producto!]!
+  pedidos: [Pedido!]!
+  categorias: [Categoria!]!
+  categoriaPorId(id: ID!): Categoria
+}
+
+type Mutation {
+  crearProducto(data: CrearProductoInput!): Producto!
+  actualizarProducto(id: ID!, data: ActualizarProductoInput!): Producto!
+  eliminarProducto(id: ID!): Producto!
+  crearPedido(items: [ItemPedidoInput!]!, usuarioId: ID): Pedido!
+  registrar(data: RegistrarInput!): AuthPayload!
+  login(data: LoginInput!): AuthPayload!
+}
+
+input CrearProductoInput {
+  nombre: String!
+  precio: Float!
+  stock: Int!
+  descripcion: String!
+  imagen: String!
+  categoriaId: ID!
+}
+
+input ActualizarProductoInput {
+  nombre: String
+  precio: Float
+  stock: Int
+  descripcion: String
+  imagen: String
+}
+
+input ItemPedidoInput {
+  productoId: ID!
+  nombre: String!
+  cantidad: Int!
+  precioUnit: Float!
+}
+
+input RegistrarInput {
+  nombre: String!
+  email: String!
+  password: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
