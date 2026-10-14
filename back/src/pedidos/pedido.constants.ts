@@ -1,0 +1,8 @@
+export const ESTADO_PEDIDO = {
+  PENDIENTE_PAGO: 'PENDIENTE_PAGO',
+  PAGADO: 'PAGADO',
+  CANCELADO: 'CANCELADO',
+  EXPIRADO: 'EXPIRADO',
+} as const;
+
+export const MINUTOS_RESERVA = 30;

@@ -17,4 +17,17 @@ export class AuthResolver {
   login(@Args('data') data: LoginInput) {
     return this.authService.login(data);
   }
+
+  @Mutation(() => Boolean)
+  solicitarRecuperacion(@Args('email') email: string) {
+    return this.authService.solicitarRecuperacion(email);
+  }
+
+  @Mutation(() => Boolean)
+  restablecerPassword(
+    @Args('token') token: string,
+    @Args('password') password: string,
+  ) {
+    return this.authService.restablecerPassword(token, password);
+  }
 }

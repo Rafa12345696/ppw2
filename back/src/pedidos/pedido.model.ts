@@ -21,11 +21,23 @@ export class Pedido {
   @Field(() => ID)
   id: string;
 
+  @Field(() => Date)
+  fecha: Date;
+
   @Field()
   estado: string;
 
   @Field(() => Float)
   total: number;
+
+  @Field(() => String, { nullable: true })
+  metodoPago?: string | null;
+
+  @Field(() => Date, { nullable: true })
+  expiraEn?: Date | null;
+
+  @Field(() => Date, { nullable: true })
+  pagadoEn?: Date | null;
 
   @Field(() => ID)
   usuarioId: string;

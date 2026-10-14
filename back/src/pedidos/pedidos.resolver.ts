@@ -1,9 +1,15 @@
-import { Resolver, Query, Mutation, Args, ResolveField, Parent, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, ResolveField, Parent } from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
 import { Pedido } from './pedido.model.js';
-import { Usuario } from '../usuarios/usuarios.model.js';
+import { Usuario, Rol } from '../usuarios/usuarios.model.js';
 import { PedidosService } from './pedidos.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ItemPedidoInput } from './dto/item-pedido.input.js';
+import { GqlAuthGuard } from '../auth/guards/gql-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import type { UserAuthContext } from '../auth/types/auth.types.js';
 
 @Resolver(() => Pedido)
 export class PedidosResolver {
@@ -13,16 +19,34 @@ export class PedidosResolver {
   ) {}
 
   @Query(() => [Pedido])
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Roles(Rol.ADMIN)
   pedidos() {
     return this.pedidosService.findAll();
   }
 
+  @Query(() => [Pedido])
+  @UseGuards(GqlAuthGuard)
+  misPedidos(@CurrentUser() user: UserAuthContext) {
+    return this.pedidosService.findByUsuario(user.userId);
+  }
+
+  @Query(() => Pedido)
+  @UseGuards(GqlAuthGuard)
+  miPedido(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: UserAuthContext,
+  ) {
+    return this.pedidosService.findOneDe(id, user);
+  }
+
   @Mutation(() => Pedido)
+  @UseGuards(GqlAuthGuard)
   crearPedido(
     @Args('items', { type: () => [ItemPedidoInput] }) items: ItemPedidoInput[],
-    @Args('usuarioId', { type: () => ID, nullable: true }) usuarioId?: string,
+    @CurrentUser() user: UserAuthContext,
   ) {
-    return this.pedidosService.crearPedido(items, usuarioId);
+    return this.pedidosService.crearPedido(items, user.userId);
   }
 
   @ResolveField(() => Usuario, { nullable: true })

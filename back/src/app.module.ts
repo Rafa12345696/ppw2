@@ -8,8 +8,11 @@ import { PedidosModule } from './pedidos/pedidos.module.js';
 import { CategoriasModule } from './categorias/categorias.module.js';
 import { UsuariosModule } from './usuarios/usuarios.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { PagosModule } from './pagos/pagos.module.js';
+import { HealthController } from './health.controller.js';
 
 @Module({
+  controllers: [HealthController],
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
@@ -23,6 +26,7 @@ import { AuthModule } from './auth/auth.module.js';
     CategoriasModule,
     UsuariosModule,
     AuthModule,
+    PagosModule,
   ],
 })
 export class AppModule {}

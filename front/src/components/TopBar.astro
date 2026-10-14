@@ -1,0 +1,13 @@
+---
+import CartBadge from './islands/CartBadge.jsx';
+import SesionInfo from './islands/SesionInfo.jsx';
+---
+
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #1a1a1a; color: white;">
+  <a href="/tienda" style="color: white; text-decoration: none; font-size: 1.5rem; font-weight: bold;">Elixir</a>
+  <nav style="display: flex; gap: 1rem; align-items: center;">
+    <a href="/tienda" style="color: white;">Inicio</a>
+    <a href="/carrito" style="color: white;">Carrito <CartBadge client:load /></a>
+    <SesionInfo client:load />
+  </nav>
+</div>

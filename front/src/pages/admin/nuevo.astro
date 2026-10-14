@@ -1,0 +1,22 @@
+---
+export const prerender = true;
+import TopBar from '../../components/TopBar.astro';
+import FormularioProducto from '../../components/islands/FormularioProducto.jsx';
+import '../../index.css';
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nuevo producto — Elixir</title>
+  </head>
+  <body>
+    <TopBar />
+    <div style="padding: 2rem;">
+      <a href="/admin">Volver</a>
+      <h2>Nuevo producto</h2>
+      <FormularioProducto client:load />
+    </div>
+  </body>
+</html>

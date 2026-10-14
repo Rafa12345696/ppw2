@@ -1,0 +1,66 @@
+---
+import TopBar from '../../components/TopBar.astro';
+import AgregarAlCarrito from '../../components/islands/AgregarAlCarrito.jsx';
+import { graphqlFetchSSR } from '../../api.js';
+import '../../index.css';
+
+const { id } = Astro.params;
+
+const QUERY = `
+  query($id: ID!) {
+    productoPorId(id: $id) {
+      id
+      nombre
+      precio
+      stock
+      descripcion
+      imagen
+    }
+  }
+`;
+
+let producto = null;
+let error = false;
+
+try {
+  const data = await graphqlFetchSSR(QUERY, { id });
+  producto = data?.productoPorId || null;
+} catch (e) {
+  error = true;
+}
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{producto?.nombre || 'Producto'} — Elixir</title>
+  </head>
+  <body>
+    <TopBar />
+    <a href="/tienda" style="display: inline-block; margin: 1rem;">Volver</a>
+
+    {error && (
+      <div style="padding: 1rem; color: #b00020;">
+        <p>Ocurrio un error al cargar este producto.</p>
+      </div>
+    )}
+
+    {!error && !producto && (
+      <p style="padding: 1rem;">Producto no encontrado.</p>
+    )}
+
+    {!error && producto && (
+      <div style="padding: 1rem; max-width: 500px;">
+        <img src={producto.imagen} alt={producto.nombre} style="width: 100%; height: 300px; object-fit: cover; border-radius: 10px; margin-bottom: 1rem;" />
+        <h1>{producto.nombre}</h1>
+        <p>{producto.descripcion}</p>
+        <p style="font-size: 1.3rem; font-weight: bold;">${producto.precio}</p>
+        <p style={producto.stock < 1 ? 'color: #b00020;' : producto.stock <= 5 ? 'color: #b26a00;' : 'color: #2e7d32;'}>
+          {producto.stock < 1 ? 'Agotado' : `Disponibles: ${producto.stock}`}
+        </p>
+        <AgregarAlCarrito producto={producto} client:visible />
+      </div>
+    )}
+  </body>
+</html>

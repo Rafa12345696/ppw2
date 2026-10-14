@@ -1,0 +1,22 @@
+---
+export const prerender = true;
+import TopBar from '../components/TopBar.astro';
+import LoginForm from '../components/islands/LoginForm.jsx';
+import '../index.css';
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar sesion — Elixir</title>
+  </head>
+  <body>
+    <TopBar />
+    <div style="padding: 2rem;">
+      <h2>Iniciar sesion</h2>
+      <LoginForm client:load />
+      <p style="margin-top: 1rem;">¿No tienes cuenta? <a href="/registro">Registrate aqui</a></p>
+    </div>
+  </body>
+</html>

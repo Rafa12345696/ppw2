@@ -5,17 +5,20 @@ import { AuthService } from './auth.service.js';
 import { AuthResolver } from './auth.resolver.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { UsuariosModule } from '../usuarios/usuarios.module.js';
+import { MailModule } from '../mail/mail.module.js';
+import { JWT_SECRET } from './auth.constants.js';
 
 @Module({
   imports: [
     UsuariosModule,
+    MailModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_ACCESS_SECRET || 'super_secret_access_key',
+      secret: JWT_SECRET,
       signOptions: { expiresIn: '1d' },
     }),
   ],
   providers: [AuthService, AuthResolver, JwtStrategy],
-  exports: [JwtModule],
+  exports: [JwtModule, PassportModule],
 })
 export class AuthModule {}

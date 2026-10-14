@@ -13,15 +13,17 @@ enum Rol {
 }
 
 model Usuario {
-  id            String         @id @default(auto()) @map("_id") @db.ObjectId
-  nombre        String
-  email         String         @unique
-  password      String?
-  rol           Rol            @default(CLIENTE)
-  refreshTokens RefreshToken[]
-  pedidos       Pedido[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id             String               @id @default(auto()) @map("_id") @db.ObjectId
+  nombre         String
+  email          String               @unique
+  password       String?
+  rol            Rol                  @default(CLIENTE)
+  activo         Boolean?             @default(true)
+  refreshTokens  RefreshToken[]
+  passwordResets PasswordResetToken[]
+  pedidos        Pedido[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model RefreshToken {
@@ -30,6 +32,16 @@ model RefreshToken {
   usuarioId String   @db.ObjectId
   usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   revocado  Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  tokenHash String   @unique
+  usuarioId String   @db.ObjectId
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usado     Boolean  @default(false)
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
@@ -59,11 +71,42 @@ type ItemPedido {
 }
 
 model Pedido {
-  id        String       @id @default(auto()) @map("_id") @db.ObjectId
-  fecha     DateTime     @default(now())
-  estado    String       @default("pendiente")
-  total     Float
-  usuarioId String       @db.ObjectId
-  usuario   Usuario      @relation(fields: [usuarioId], references: [id])
-  detalles  ItemPedido[]
+  id         String       @id @default(auto()) @map("_id") @db.ObjectId
+  fecha      DateTime     @default(now())
+  estado     String       @default("PENDIENTE_PAGO")
+  total      Float
+  metodoPago String?
+  expiraEn   DateTime?
+  pagadoEn   DateTime?
+  usuarioId  String       @db.ObjectId
+  usuario    Usuario      @relation(fields: [usuarioId], references: [id])
+  detalles   ItemPedido[]
+  pagos      Pago[]
+}
+
+model Pago {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  pedidoId      String   @db.ObjectId
+  pedido        Pedido   @relation(fields: [pedidoId], references: [id])
+  proveedor     String
+  referencia    String?
+  pagoIdExterno String?
+  estado        String   @default("PENDIENTE")
+  monto         Float
+  moneda        String   @default("MXN")
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  @@index([pedidoId])
+  @@index([pagoIdExterno])
+}
+
+model WebhookEvento {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  proveedor String
+  eventoId  String
+  tipo      String?
+  creadoEn  DateTime @default(now())
+
+  @@unique([proveedor, eventoId])
 }

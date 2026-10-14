@@ -1,0 +1,69 @@
+---
+import TopBar from '../../components/TopBar.astro';
+import { graphqlFetchSSR } from '../../api.js';
+import '../../index.css';
+
+const { id } = Astro.params;
+
+const QUERY = `
+  query($categoriaId: ID!) {
+    productosPorCategoria(categoriaId: $categoriaId) {
+      id
+      nombre
+      precio
+      imagen
+    }
+    categoriaPorId(id: $categoriaId) {
+      nombre
+    }
+  }
+`;
+
+let productos = [];
+let nombreCategoria = '';
+let error = false;
+
+try {
+  const data = await graphqlFetchSSR(QUERY, { categoriaId: id });
+  productos = data?.productosPorCategoria || [];
+  nombreCategoria = data?.categoriaPorId?.nombre || '';
+} catch (e) {
+  error = true;
+}
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{nombreCategoria || 'Categoria'} — Elixir</title>
+  </head>
+  <body>
+    <TopBar />
+    <a href="/tienda" style="display: inline-block; margin: 1rem;">Volver</a>
+
+    <h2 style="padding: 0 1rem;">{nombreCategoria}</h2>
+
+    {error && (
+      <div style="padding: 1rem; color: #b00020;">
+        <p>Ocurrio un error al cargar los productos de esta categoria.</p>
+      </div>
+    )}
+
+    {!error && productos.length === 0 && (
+      <p style="padding: 1rem;">No hay productos en esta categoria.</p>
+    )}
+
+    {!error && productos.length > 0 && (
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1rem;">
+        {productos.map((prod) => (
+          <a href={`/producto/${prod.id}`} style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 1rem; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.08); text-decoration: none; color: inherit; display: block;">
+            <img src={prod.imagen} alt={prod.nombre} style="width: 100%; height: 150px; object-fit: cover; border-radius: 6px; margin-bottom: 0.5rem;" />
+            <h4>{prod.nombre}</h4>
+            <p>${prod.precio}</p>
+          </a>
+        ))}
+      </div>
+    )}
+  </body>
+</html>
