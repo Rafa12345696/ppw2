@@ -1,6 +1,7 @@
 ---
 export const prerender = true;
 import TopBar from '../../components/TopBar.astro';
+import AdminNav from '../../components/AdminNav.astro';
 import AdminProductos from '../../components/islands/AdminProductos.jsx';
 import '../../index.css';
 ---
@@ -9,12 +10,13 @@ import '../../index.css';
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin — Elixir</title>
+    <title>Productos — Admin Elixir</title>
   </head>
   <body>
     <TopBar />
-    <div style="padding: 2rem;">
-      <h2>Panel de administracion</h2>
+    <AdminNav />
+    <div style="padding: 1.5rem;">
+      <h2>Productos</h2>
       <AdminProductos client:load />
     </div>
   </body>

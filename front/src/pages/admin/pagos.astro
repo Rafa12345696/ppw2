@@ -1,0 +1,23 @@
+---
+export const prerender = true;
+import TopBar from '../../components/TopBar.astro';
+import AdminNav from '../../components/AdminNav.astro';
+import AdminPagos from '../../components/islands/AdminPagos.jsx';
+import '../../index.css';
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pagos — Admin Elixir</title>
+  </head>
+  <body>
+    <TopBar />
+    <AdminNav />
+    <div style="padding: 1.5rem;">
+      <h2>Pagos</h2>
+      <AdminPagos client:load />
+    </div>
+  </body>
+</html>

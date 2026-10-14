@@ -87,7 +87,7 @@ function Formulario({ productoId }) {
           token,
         );
       }
-      window.location.href = '/admin';
+      window.location.href = '/admin/productos';
     } catch (err) {
       setError('No se pudo guardar el producto. Revisa los datos.');
     }

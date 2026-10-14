@@ -9,6 +9,7 @@ import { CategoriasModule } from './categorias/categorias.module.js';
 import { UsuariosModule } from './usuarios/usuarios.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { PagosModule } from './pagos/pagos.module.js';
+import { EstadisticasModule } from './estadisticas/estadisticas.module.js';
 import { HealthController } from './health.controller.js';
 
 @Module({
@@ -27,6 +28,7 @@ import { HealthController } from './health.controller.js';
     UsuariosModule,
     AuthModule,
     PagosModule,
+    EstadisticasModule,
   ],
 })
 export class AppModule {}

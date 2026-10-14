@@ -62,6 +62,7 @@ export class AuthService {
       throw new UnauthorizedException('Correo o contraseña incorrectos');
     }
 
+    if (usuario.activo === false) { throw new UnauthorizedException('Esta cuenta esta desactivada'); }
     const passwordValido = await bcrypt.compare(data.password, usuario.password!);
     if (!passwordValido) {
       throw new UnauthorizedException('Correo o contraseña incorrectos');

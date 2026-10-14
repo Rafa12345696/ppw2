@@ -24,12 +24,19 @@ type Usuario {
   nombre: String!
   email: String!
   rol: Rol!
+  activo: Boolean
+  createdAt: DateTime
 }
 
 enum Rol {
   CLIENTE
   ADMIN
 }
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
 
 type AuthPayload {
   accessToken: String!
@@ -54,27 +61,80 @@ type Pedido {
   usuarioId: ID!
   usuario: Usuario
   detalles: [ItemPedidoType!]!
+  pagos: [PagoRegistro!]!
 }
-
-"""
-A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
-"""
-scalar DateTime
 
 type PagoIniciado {
   url: String!
   pagoId: ID!
 }
 
+type PagoRegistro {
+  id: ID!
+  pedidoId: ID!
+  proveedor: String!
+  estado: String!
+  monto: Float!
+  moneda: String!
+  referencia: String
+  pagoIdExterno: String
+  creadoEn: DateTime!
+  actualizadoEn: DateTime!
+}
+
+type PuntoVenta {
+  fecha: String!
+  total: Float!
+  pedidos: Int!
+}
+
+type ProductoTop {
+  nombre: String!
+  unidades: Int!
+  ingresos: Float!
+}
+
+type VentaMetodo {
+  metodo: String!
+  total: Float!
+  pedidos: Int!
+}
+
+type EstadoConteo {
+  estado: String!
+  cantidad: Int!
+}
+
+type ProductoStockBajo {
+  id: ID!
+  nombre: String!
+  stock: Int!
+}
+
+type Estadisticas {
+  ingresosTotales: Float!
+  pedidosPagados: Int!
+  ticketPromedio: Float!
+  pedidosPendientes: Int!
+  ventasPorDia: [PuntoVenta!]!
+  topProductos: [ProductoTop!]!
+  ventasPorMetodo: [VentaMetodo!]!
+  pedidosPorEstado: [EstadoConteo!]!
+  stockBajo: [ProductoStockBajo!]!
+}
+
 type Query {
   productos(skip: Int = 0, take: Int = 20): [Producto!]!
   productoPorId(id: ID!): Producto
   productosPorCategoria(categoriaId: ID!): [Producto!]!
+  usuarios: [Usuario!]!
   pedidos: [Pedido!]!
   misPedidos: [Pedido!]!
   miPedido(id: ID!): Pedido!
   categorias: [Categoria!]!
   categoriaPorId(id: ID!): Categoria
+  pagos: [PagoRegistro!]!
+  estadisticas(dias: Int = 30): Estadisticas!
 }
 
 type Mutation {
@@ -85,7 +145,10 @@ type Mutation {
   login(data: LoginInput!): AuthPayload!
   solicitarRecuperacion(email: String!): Boolean!
   restablecerPassword(token: String!, password: String!): Boolean!
+  crearUsuario(data: CrearUsuarioInput!): Usuario!
+  cambiarEstadoUsuario(id: ID!, activo: Boolean!): Usuario!
   crearPedido(items: [ItemPedidoInput!]!): Pedido!
+  cancelarPedido(id: ID!): Pedido!
   iniciarPago(pedidoId: ID!, proveedor: String!): PagoIniciado!
   confirmarPago(pedidoId: ID!): Pedido!
 }
@@ -116,6 +179,13 @@ input RegistrarInput {
 input LoginInput {
   email: String!
   password: String!
+}
+
+input CrearUsuarioInput {
+  nombre: String!
+  email: String!
+  password: String!
+  rol: Rol!
 }
 
 input ItemPedidoInput {

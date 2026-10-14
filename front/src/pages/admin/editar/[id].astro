@@ -1,5 +1,6 @@
 ---
 import TopBar from '../../../components/TopBar.astro';
+import AdminNav from '../../../components/AdminNav.astro';
 import FormularioProducto from '../../../components/islands/FormularioProducto.jsx';
 import '../../../index.css';
 
@@ -10,12 +11,13 @@ const { id } = Astro.params;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Editar producto — Elixir</title>
+    <title>Editar producto — Admin Elixir</title>
   </head>
   <body>
     <TopBar />
-    <div style="padding: 2rem;">
-      <a href="/admin">Volver</a>
+    <AdminNav />
+    <div style="padding: 1.5rem;">
+      <a href="/admin/productos">Volver</a>
       <h2>Editar producto</h2>
       <FormularioProducto productoId={id} client:load />
     </div>

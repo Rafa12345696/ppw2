@@ -1,0 +1,23 @@
+---
+const ruta = Astro.url.pathname;
+const enlaces = [
+  { href: '/admin', texto: 'Resumen' },
+  { href: '/admin/productos', texto: 'Productos' },
+  { href: '/admin/pedidos', texto: 'Pedidos' },
+  { href: '/admin/pagos', texto: 'Pagos' },
+  { href: '/admin/usuarios', texto: 'Usuarios' },
+];
+const activo = (href) =>
+  href === '/admin' ? ruta === '/admin' || ruta === '/admin/' : ruta.startsWith(href);
+---
+
+<nav style="display: flex; gap: 0.5rem; flex-wrap: wrap; padding: 0.75rem 1rem; background: #f0f0f0; border-bottom: 1px solid #ddd;">
+  {enlaces.map((e) => (
+    <a
+      href={e.href}
+      style={`padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; color: ${activo(e.href) ? 'white' : '#222'}; background: ${activo(e.href) ? '#b8860b' : 'transparent'};`}
+    >
+      {e.texto}
+    </a>
+  ))}
+</nav>

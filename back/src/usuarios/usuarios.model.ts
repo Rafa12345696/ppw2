@@ -20,4 +20,10 @@ export class Usuario {
 
   @Field(() => Rol)
   rol: Rol;
+
+  @Field(() => Boolean, { nullable: true })
+  activo?: boolean | null;
+
+  @Field(() => Date, { nullable: true })
+  createdAt?: Date | null;
 }
