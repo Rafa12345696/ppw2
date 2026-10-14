@@ -2,7 +2,7 @@
 export const prerender = true;
 import TopBar from '../../components/TopBar.astro';
 import AdminNav from '../../components/AdminNav.astro';
-import AdminProductos from '../../components/islands/AdminProductos.jsx';
+import AdminDashboard from '../../components/islands/AdminDashboard.jsx';
 import '../../index.css';
 ---
 
@@ -10,14 +10,14 @@ import '../../index.css';
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Productos — Admin Elixir</title>
+    <title>Resumen - Admin Elixir</title>
   </head>
   <body>
     <TopBar />
     <AdminNav />
     <div style="padding: 1.5rem;">
-      <h2>Productos</h2>
-      <AdminProductos client:load />
+      <h2>Resumen de ventas</h2>
+      <AdminDashboard client:only="react" />
     </div>
   </body>
 </html>
