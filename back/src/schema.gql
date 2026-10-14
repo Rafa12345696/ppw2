@@ -111,16 +111,71 @@ type ProductoStockBajo {
   stock: Int!
 }
 
+type ProductoSinMovimiento {
+  id: ID!
+  nombre: String!
+  stock: Int!
+}
+
+type CategoriaVenta {
+  categoria: String!
+  total: Float!
+  unidades: Int!
+}
+
+type ClienteTop {
+  id: ID!
+  nombre: String!
+  email: String!
+  pedidos: Int!
+  total: Float!
+}
+
+type PuntoUsuarios {
+  fecha: String!
+  cantidad: Int!
+}
+
+type DiaSemanaVenta {
+  dia: String!
+  total: Float!
+  pedidos: Int!
+}
+
+type HoraVenta {
+  hora: Int!
+  pedidos: Int!
+}
+
+type ParProductos {
+  a: String!
+  b: String!
+  veces: Int!
+}
+
 type Estadisticas {
   ingresosTotales: Float!
   pedidosPagados: Int!
   ticketPromedio: Float!
   pedidosPendientes: Int!
+  ingresosAnterior: Float!
+  pedidosAnterior: Int!
+  tasaConversion: Float!
+  pedidosCreados: Int!
+  usuariosNuevos: Int!
+  clientesRecurrentes: Int!
   ventasPorDia: [PuntoVenta!]!
+  ventasPorDiaSemana: [DiaSemanaVenta!]!
+  ventasPorHora: [HoraVenta!]!
   topProductos: [ProductoTop!]!
+  ventasPorCategoria: [CategoriaVenta!]!
+  productosRelacionados: [ParProductos!]!
+  productosSinMovimiento: [ProductoSinMovimiento!]!
+  stockBajo: [ProductoStockBajo!]!
+  topClientes: [ClienteTop!]!
+  usuariosPorDia: [PuntoUsuarios!]!
   ventasPorMetodo: [VentaMetodo!]!
   pedidosPorEstado: [EstadoConteo!]!
-  stockBajo: [ProductoStockBajo!]!
 }
 
 type Query {
