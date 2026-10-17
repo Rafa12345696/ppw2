@@ -520,4 +520,241 @@ export class PagosService {
       // ya estaba registrado
     }
   }
+
+  // ================= CHECKOUT EMBEBIDO (sin salir de la tienda) =================
+
+  configPagos() {
+    return {
+      mpPublicKey: process.env.MP_PUBLIC_KEY ?? null,
+      paypalClientId: process.env.PAYPAL_CLIENT_ID ?? null,
+      paypalCurrency: this.paypalMoneda(),
+    };
+  }
+
+  private horasAFechaMP(horas: number) {
+    // Mercado Pago pide fecha ISO con zona horaria. Mexico no tiene horario de verano (UTC-6)
+    const ms = Date.now() + horas * 3_600_000 - 6 * 3_600_000;
+    return new Date(ms).toISOString().replace('Z', '-06:00');
+  }
+
+  private mensajeRechazoMP(detalle: string) {
+    const mensajes: Record<string, string> = {
+      cc_rejected_insufficient_amount: 'La tarjeta no tiene fondos suficientes.',
+      cc_rejected_bad_filled_security_code: 'El codigo de seguridad es incorrecto.',
+      cc_rejected_bad_filled_date: 'La fecha de vencimiento es incorrecta.',
+      cc_rejected_bad_filled_other: 'Revisa los datos de la tarjeta.',
+      cc_rejected_call_for_authorize: 'Tu banco debe autorizar este pago. Llama a tu banco o usa otra tarjeta.',
+      cc_rejected_card_disabled: 'La tarjeta esta deshabilitada.',
+      cc_rejected_high_risk: 'El pago fue rechazado por seguridad. Prueba con otro medio de pago.',
+      cc_rejected_other_reason: 'Tu banco no aprobo el pago. Prueba con otra tarjeta.',
+    };
+    return mensajes[detalle] ?? 'El pago fue rechazado. Prueba con otra tarjeta o medio de pago.';
+  }
+
+  private limpiarPayer(p: any) {
+    const email = String(p?.email ?? '').trim();
+    if (!email) throw new BadRequestException('Falta el correo del pagador');
+
+    const salida: Record<string, unknown> = { email };
+    if (p?.first_name) salida.first_name = String(p.first_name);
+    if (p?.last_name) salida.last_name = String(p.last_name);
+    if (p?.identification?.number) {
+      salida.identification = {
+        type: String(p.identification.type ?? ''),
+        number: String(p.identification.number),
+      };
+    }
+    return salida;
+  }
+
+  private async validarIntento(pedido: PedidoDB) {
+    if (pedido.estado !== ESTADO_PEDIDO.PENDIENTE_PAGO) {
+      throw new BadRequestException('Este pedido ya no esta pendiente de pago');
+    }
+    const aprobado = await this.prisma.pago.findFirst({
+      where: { pedidoId: pedido.id, estado: 'APROBADO' },
+    });
+    if (aprobado) throw new BadRequestException('Este pedido ya tiene un pago aprobado');
+
+    // Un pago que el proveedor ya registro y sigue pendiente (por ejemplo una ficha de efectivo)
+    // bloquea otros intentos, para no cobrar dos veces el mismo pedido
+    const enCurso = await this.prisma.pago.findFirst({
+      where: { pedidoId: pedido.id, estado: 'PENDIENTE', pagoIdExterno: { not: null } },
+    });
+    if (enCurso) {
+      throw new BadRequestException(
+        'Ya tienes un pago en proceso para este pedido. Espera a que se acredite o a que venza.',
+      );
+    }
+  }
+
+  // Solo alarga la reserva del stock, nunca la acorta
+  private async extenderReserva(pedidoId: string, minutos: number) {
+    const hasta = new Date(Date.now() + minutos * 60_000);
+    await this.prisma.pedido.updateMany({
+      where: {
+        id: pedidoId,
+        estado: ESTADO_PEDIDO.PENDIENTE_PAGO,
+        OR: [{ expiraEn: null }, { expiraEn: { lt: hasta } }],
+      },
+      data: { expiraEn: hasta },
+    });
+  }
+
+  private async mpPost(path: string, body: unknown, idempotencia: string) {
+    const token = this.requerir('MP_ACCESS_TOKEN');
+    const res = await fetch(`https://api.mercadopago.com${path}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Idempotency-Key': idempotencia,
+      },
+      body: JSON.stringify(body),
+    });
+    const data: any = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  // ---------- Mercado Pago: el Brick manda sus datos aqui ----------
+
+  async pagarConMercadoPago(pedidoId: string, datosJson: string, user: UserAuthContext) {
+    let datos: any;
+    try {
+      datos = JSON.parse(datosJson);
+    } catch {
+      throw new BadRequestException('Datos de pago invalidos');
+    }
+
+    const pedido = await this.pedidoDe(pedidoId, user);
+    await this.validarIntento(pedido);
+
+    const metodo = String(datos?.payment_method_id ?? '').trim();
+    if (!metodo) throw new BadRequestException('Falta el medio de pago');
+
+    const reciente = await this.prisma.pago.findFirst({
+      where: {
+        pedidoId: pedido.id,
+        proveedor: 'MERCADOPAGO',
+        estado: 'PENDIENTE',
+        creadoEn: { gt: new Date(Date.now() - 15_000) },
+      },
+    });
+    if (reciente) throw new BadRequestException('Ya hay un pago en proceso, espera unos segundos');
+
+    // Sin token de tarjeta es efectivo o cajero: el cliente paga despues
+    const efectivo = !datos?.token;
+    const payer = this.limpiarPayer(datos?.payer);
+    await this.extenderReserva(pedido.id, efectivo ? 24 * 60 : MINUTOS_RESERVA);
+
+    const pago = await this.prisma.pago.create({
+      data: { pedidoId: pedido.id, proveedor: 'MERCADOPAGO', monto: pedido.total, moneda: 'MXN' },
+    });
+
+    // El monto sale del pedido en la base: lo que mande el navegador se ignora
+    const body: Record<string, unknown> = {
+      transaction_amount: pedido.total,
+      description: `Pedido Elixir ${pedido.id.slice(-6)}`,
+      payment_method_id: metodo,
+      installments: Number(datos?.installments ?? 1),
+      external_reference: pedido.id,
+      payer,
+    };
+    if (datos?.token) body.token = String(datos.token);
+    if (datos?.issuer_id) body.issuer_id = Number(datos.issuer_id);
+    if (efectivo) body.date_of_expiration = this.horasAFechaMP(24);
+    const webhook = this.webhookBase();
+    if (webhook) body.notification_url = `${webhook}/webhooks/mercadopago`;
+
+    let r: { ok: boolean; status: number; data: any };
+    try {
+      r = await this.mpPost('/v1/payments', body, pago.id);
+    } catch (e) {
+      await this.prisma.pago.update({ where: { id: pago.id }, data: { estado: 'ERROR' } });
+      this.logger.error(`No se pudo contactar a Mercado Pago: ${(e as Error).message}`);
+      throw new BadRequestException('No se pudo contactar a Mercado Pago. Intenta de nuevo.');
+    }
+
+    if (!r.ok) {
+      await this.prisma.pago.update({ where: { id: pago.id }, data: { estado: 'ERROR' } });
+      this.logger.error(`Mercado Pago rechazo la solicitud (${r.status}): ${JSON.stringify(r.data)}`);
+      throw new BadRequestException('No se pudo procesar el pago. Revisa los datos e intenta de nuevo.');
+    }
+
+    const idMP = String(r.data.id);
+    await this.prisma.pago.update({
+      where: { id: pago.id },
+      data: { referencia: idMP, pagoIdExterno: idMP },
+    });
+
+    const res = this.resultadoDePagoMP(r.data);
+    if (res) await this.aplicarResultado(res.pedidoId, 'MERCADOPAGO', res.resultado, idMP);
+
+    const estado = res?.resultado.estado ?? 'PENDIENTE';
+    if (estado === 'PENDIENTE') await this.extenderReserva(pedido.id, 24 * 60);
+
+    const actual = await this.prisma.pedido.findUniqueOrThrow({ where: { id: pedido.id } });
+    const detalle = String(r.data.status_detail ?? '');
+
+    return {
+      estado,
+      detalle: estado === 'RECHAZADO' ? this.mensajeRechazoMP(detalle) : detalle,
+      urlComprobante: r.data.transaction_details?.external_resource_url ?? null,
+      pedidoEstado: actual.estado,
+    };
+  }
+
+  // ---------- PayPal: boton y campos de tarjeta ----------
+
+  async crearOrdenPayPalEmbebida(pedidoId: string, user: UserAuthContext) {
+    const pedido = await this.pedidoDe(pedidoId, user);
+    await this.validarIntento(pedido);
+    await this.extenderReserva(pedido.id, MINUTOS_RESERVA);
+
+    const moneda = this.paypalMoneda();
+    const pago = await this.prisma.pago.create({
+      data: { pedidoId: pedido.id, proveedor: 'PAYPAL', monto: pedido.total, moneda },
+    });
+
+    try {
+      const r = await this.paypal('/v2/checkout/orders', {
+        method: 'POST',
+        requestId: pago.id,
+        body: {
+          intent: 'CAPTURE',
+          purchase_units: [
+            {
+              reference_id: pedido.id,
+              custom_id: pedido.id,
+              amount: { currency_code: moneda, value: pedido.total.toFixed(2) },
+            },
+          ],
+        },
+      });
+      if (!r.ok) throw new Error(`PayPal respondio ${r.status}: ${JSON.stringify(r.data)}`);
+
+      await this.prisma.pago.update({ where: { id: pago.id }, data: { referencia: r.data.id } });
+      return r.data.id as string;
+    } catch (e) {
+      await this.prisma.pago.update({ where: { id: pago.id }, data: { estado: 'ERROR' } });
+      this.logger.error(`No se pudo crear la orden de PayPal: ${(e as Error).message}`);
+      throw new BadRequestException('No se pudo iniciar el pago con PayPal. Intenta de nuevo.');
+    }
+  }
+
+  async capturarPayPal(pedidoId: string, orderId: string, user: UserAuthContext) {
+    const pedido = await this.pedidoDe(pedidoId, user);
+
+    // Solo se captura una orden que este mismo backend creo para este pedido
+    const pago = await this.prisma.pago.findFirst({
+      where: { pedidoId: pedido.id, proveedor: 'PAYPAL', referencia: orderId },
+    });
+    if (!pago) throw new BadRequestException('Esa orden de PayPal no corresponde a este pedido');
+
+    const r = await this.resultadoPayPal(orderId);
+    if (r && r.pedidoId === pedido.id) {
+      await this.aplicarResultado(pedido.id, 'PAYPAL', r.resultado, orderId);
+    }
+    return this.prisma.pedido.findUniqueOrThrow({ where: { id: pedido.id } });
+  }
 }

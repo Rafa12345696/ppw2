@@ -1,0 +1,25 @@
+---
+export const prerender = true;
+import TopBar from '../components/TopBar.astro';
+import Comprobante from '../components/islands/Comprobante.jsx';
+import '../index.css';
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comprobante - Elixir</title>
+    <style is:global>
+      @media print {
+        .no-imprimir { display: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="no-imprimir"><TopBar /></div>
+    <div style="padding: 2rem;">
+      <Comprobante client:load />
+    </div>
+  </body>
+</html>

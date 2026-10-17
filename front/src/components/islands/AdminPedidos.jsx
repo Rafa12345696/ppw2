@@ -107,6 +107,7 @@ function Lista() {
               {abierto === p.id && (
                 <tr key={`${p.id}-detalle`} style={{ background: '#fafafa' }}>
                   <td colSpan={7} style={{ padding: '0.75rem' }}>
+                    <p style={{ marginBottom: '0.5rem' }}><a href={`/comprobante?pedido=${p.id}`}>Ver comprobante</a></p>
                     <strong>Productos</strong>
                     <ul style={{ paddingLeft: '1.2rem', marginBottom: '0.5rem' }}>
                       {p.detalles.map((d, i) => (

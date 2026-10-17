@@ -41,3 +41,30 @@ export class PagoRegistro {
   @Field(() => Date)
   actualizadoEn: Date;
 }
+
+@ObjectType()
+export class ConfigPagos {
+  @Field(() => String, { nullable: true })
+  mpPublicKey?: string | null;
+
+  @Field(() => String, { nullable: true })
+  paypalClientId?: string | null;
+
+  @Field()
+  paypalCurrency: string;
+}
+
+@ObjectType()
+export class ResultadoPagoMP {
+  @Field()
+  estado: string;
+
+  @Field(() => String, { nullable: true })
+  detalle?: string | null;
+
+  @Field(() => String, { nullable: true })
+  urlComprobante?: string | null;
+
+  @Field()
+  pedidoEstado: string;
+}

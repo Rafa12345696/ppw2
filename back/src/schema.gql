@@ -82,6 +82,19 @@ type PagoRegistro {
   actualizadoEn: DateTime!
 }
 
+type ConfigPagos {
+  mpPublicKey: String
+  paypalClientId: String
+  paypalCurrency: String!
+}
+
+type ResultadoPagoMP {
+  estado: String!
+  detalle: String
+  urlComprobante: String
+  pedidoEstado: String!
+}
+
 type PuntoVenta {
   fecha: String!
   total: Float!
@@ -188,6 +201,7 @@ type Query {
   miPedido(id: ID!): Pedido!
   categorias: [Categoria!]!
   categoriaPorId(id: ID!): Categoria
+  configPagos: ConfigPagos!
   pagos: [PagoRegistro!]!
   estadisticas(dias: Int = 30): Estadisticas!
 }
@@ -204,6 +218,9 @@ type Mutation {
   cambiarEstadoUsuario(id: ID!, activo: Boolean!): Usuario!
   crearPedido(items: [ItemPedidoInput!]!): Pedido!
   cancelarPedido(id: ID!): Pedido!
+  pagarConMercadoPago(pedidoId: ID!, datos: String!): ResultadoPagoMP!
+  crearOrdenPayPal(pedidoId: ID!): String!
+  capturarPayPal(pedidoId: ID!, orderId: String!): Pedido!
   iniciarPago(pedidoId: ID!, proveedor: String!): PagoIniciado!
   confirmarPago(pedidoId: ID!): Pedido!
 }

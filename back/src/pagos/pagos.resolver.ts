@@ -1,7 +1,7 @@
 import { Resolver, Mutation, Query, Args, ID } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { PagosService } from './pagos.service.js';
-import { PagoIniciado, PagoRegistro } from './pago.model.js';
+import { PagoIniciado, PagoRegistro, ConfigPagos, ResultadoPagoMP } from './pago.model.js';
 import { Pedido } from '../pedidos/pedido.model.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Rol } from '../usuarios/usuarios.model.js';
@@ -17,6 +17,41 @@ export class PagosResolver {
     private readonly pagosService: PagosService,
     private readonly prisma: PrismaService,
   ) {}
+
+  // Claves publicas (seguras de exponer) para que el frontend arme los formularios
+  @Query(() => ConfigPagos)
+  configPagos() {
+    return this.pagosService.configPagos();
+  }
+
+  @Mutation(() => ResultadoPagoMP)
+  @UseGuards(GqlAuthGuard)
+  pagarConMercadoPago(
+    @Args('pedidoId', { type: () => ID }) pedidoId: string,
+    @Args('datos') datos: string,
+    @CurrentUser() user: UserAuthContext,
+  ) {
+    return this.pagosService.pagarConMercadoPago(pedidoId, datos, user);
+  }
+
+  @Mutation(() => String)
+  @UseGuards(GqlAuthGuard)
+  crearOrdenPayPal(
+    @Args('pedidoId', { type: () => ID }) pedidoId: string,
+    @CurrentUser() user: UserAuthContext,
+  ) {
+    return this.pagosService.crearOrdenPayPalEmbebida(pedidoId, user);
+  }
+
+  @Mutation(() => Pedido)
+  @UseGuards(GqlAuthGuard)
+  capturarPayPal(
+    @Args('pedidoId', { type: () => ID }) pedidoId: string,
+    @Args('orderId') orderId: string,
+    @CurrentUser() user: UserAuthContext,
+  ) {
+    return this.pagosService.capturarPayPal(pedidoId, orderId, user);
+  }
 
   @Mutation(() => PagoIniciado)
   @UseGuards(GqlAuthGuard)

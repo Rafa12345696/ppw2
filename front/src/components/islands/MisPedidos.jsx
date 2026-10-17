@@ -90,6 +90,11 @@ export default function MisPedidos() {
             Total: ${p.total} — <strong>{ETIQUETAS[p.estado] || p.estado}</strong>
             {p.metodoPago && ` (${p.metodoPago === 'PAYPAL' ? 'PayPal' : 'Mercado Pago'})`}
           </p>
+          {p.estado === 'PAGADO' && (
+            <p style={{ marginTop: '0.5rem' }}>
+              <a href={`/comprobante?pedido=${p.id}`}>Ver comprobante</a>
+            </p>
+          )}
           {p.estado === 'PENDIENTE_PAGO' && (
             <div style={{ marginTop: '0.5rem' }}>
               <BotonesPago pedidoId={p.id} />
