@@ -17,6 +17,7 @@ import {
 import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
 import RequiereAdmin from './RequiereAdmin';
+import { suscribirse } from '../../ws';
 
 const QUERY = `
   query($dias: Int) {
@@ -129,6 +130,26 @@ function Panel() {
   const [dias, setDias] = useState(30);
   const [d, setDatos] = useState(null);
   const [error, setError] = useState('');
+  const [refresco, setRefresco] = useState(0);
+  const [enVivo, setEnVivo] = useState(false);
+
+  // Cuando el servidor avisa de un cambio, se vuelve a pedir el resumen
+  useEffect(() => {
+    let espera = null;
+    const parar = suscribirse({
+      query: 'subscription { estadisticasActualizadas { motivo } }',
+      token,
+      onData: () => {
+        clearTimeout(espera);
+        espera = setTimeout(() => setRefresco((n) => n + 1), 400);
+      },
+      onEstado: setEnVivo,
+    });
+    return () => {
+      clearTimeout(espera);
+      parar();
+    };
+  }, [token]);
 
   useEffect(() => {
     let cancelado = false;
@@ -143,7 +164,7 @@ function Panel() {
     return () => {
       cancelado = true;
     };
-  }, [dias, token]);
+  }, [dias, token, refresco]);
 
   if (error) return <p style={{ color: '#b00020' }}>{error}</p>;
   if (!d) return <p>Cargando estadisticas...</p>;
@@ -156,6 +177,8 @@ function Panel() {
   return (
     <div>
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', alignItems: 'center' }}>
+        <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: enVivo ? '#2e7d32' : '#999' }} />
+        <span style={{ marginRight: '0.75rem' }}>{enVivo ? 'En vivo' : 'Sin conexion en vivo'}</span>
         <span>Periodo:</span>
         {[7, 30, 90].map((n) => (
           <button key={n} onClick={() => setDias(n)} disabled={dias === n}>

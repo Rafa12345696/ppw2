@@ -66,6 +66,16 @@ export class PedidosResolver {
     return this.prisma.pedido.findUniqueOrThrow({ where: { id } });
   }
 
+  @Mutation(() => Pedido)
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Roles(Rol.ADMIN)
+  cambiarEnvioPedido(
+    @Args('id', { type: () => ID }) id: string,
+    @Args('envio') envio: string,
+  ) {
+    return this.pedidosService.cambiarEnvio(id, envio);
+  }
+
   @ResolveField(() => Usuario, { nullable: true })
   usuario(@Parent() pedido: Pedido) {
     return this.prisma.usuario.findUnique({ where: { id: pedido.usuarioId } });

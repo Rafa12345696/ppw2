@@ -15,24 +15,27 @@ export class GqlAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = GqlExecutionContext.create(context).getContext().req;
-    const header: string | undefined = req?.headers?.authorization;
 
-    if (!header || !header.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Falta el token de acceso');
+    // WebSocket: el token ya se verifico al conectar y quedo en wsPayload
+    let payload: JwtPayload | undefined = req?.wsPayload;
+
+    if (!payload) {
+      const header: string | undefined = req?.headers?.authorization;
+      if (!header || !header.startsWith('Bearer ')) {
+        throw new UnauthorizedException('Falta el token de acceso');
+      }
+      try {
+        payload = this.jwt.verify<JwtPayload>(header.slice(7));
+      } catch {
+        throw new UnauthorizedException('Token invalido o expirado');
+      }
     }
 
-    let payload: JwtPayload;
-    try {
-      payload = this.jwt.verify<JwtPayload>(header.slice(7));
-    } catch {
+    if (!payload?.sub || !OBJECT_ID.test(payload.sub)) {
       throw new UnauthorizedException('Token invalido o expirado');
     }
 
-    if (!payload.sub || !OBJECT_ID.test(payload.sub)) {
-      throw new UnauthorizedException('Token invalido o expirado');
-    }
-
-    // El rol y el estado salen de la base, no del token: un usuario desactivado pierde acceso al instante
+    // El rol y el estado salen de la base, no del token
     const usuario = await this.prisma.usuario.findUnique({ where: { id: payload.sub } });
     if (!usuario || usuario.activo === false) {
       throw new UnauthorizedException('Tu cuenta no esta disponible');

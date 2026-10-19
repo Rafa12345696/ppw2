@@ -8,6 +8,7 @@ import {
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { Pedido as PedidoDB } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { EventosService } from '../eventos/eventos.service.js';
 import { ESTADO_PEDIDO, MINUTOS_RESERVA } from '../pedidos/pedido.constants.js';
 import { Rol } from '../usuarios/usuarios.model.js';
 import type { UserAuthContext } from '../auth/types/auth.types.js';
@@ -29,7 +30,7 @@ export class PagosService {
   private readonly logger = new Logger(PagosService.name);
   private paypalTokenCache?: { token: string; expira: number };
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private eventos: EventosService) {}
 
   // ---------- utilidades ----------
 
@@ -425,7 +426,7 @@ export class PagosService {
 
   // ---------- nucleo: aplicar un resultado (idempotente) ----------
 
-  private async aplicarResultado(
+  private async aplicarResultadoInterno(
     pedidoId: string,
     proveedor: Proveedor,
     r: Resultado,
@@ -756,5 +757,16 @@ export class PagosService {
       await this.aplicarResultado(pedido.id, 'PAYPAL', r.resultado, orderId);
     }
     return this.prisma.pedido.findUniqueOrThrow({ where: { id: pedido.id } });
+  }
+
+  // Unico punto por el que pasan los cambios de pago: al terminar se avisa a los suscriptores
+  private async aplicarResultado(
+    pedidoId: string,
+    proveedor: Proveedor,
+    r: Resultado,
+    referencia?: string,
+  ) {
+    await this.aplicarResultadoInterno(pedidoId, proveedor, r, referencia);
+    await this.eventos.pedidoCambio(pedidoId);
   }
 }

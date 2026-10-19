@@ -78,6 +78,8 @@ model Pedido {
   metodoPago String?
   expiraEn   DateTime?
   pagadoEn   DateTime?
+  envio              String?
+  envioActualizadoEn DateTime?
   usuarioId  String       @db.ObjectId
   usuario    Usuario      @relation(fields: [usuarioId], references: [id])
   detalles   ItemPedido[]

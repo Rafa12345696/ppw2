@@ -7,6 +7,7 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { EventosService } from '../eventos/eventos.service.js';
 import { ItemPedidoInput } from './dto/item-pedido.input.js';
 import { ESTADO_PEDIDO, MINUTOS_RESERVA } from './pedido.constants.js';
 import { Rol } from '../usuarios/usuarios.model.js';
@@ -14,12 +15,22 @@ import type { UserAuthContext } from '../auth/types/auth.types.js';
 
 const OBJECT_ID = /^[a-f\d]{24}$/i;
 
+// Un pedido pagado solo avanza un paso a la vez
+const SIGUIENTE_ENVIO: Record<string, string> = {
+  POR_PREPARAR: 'PREPARANDO',
+  PREPARANDO: 'ENVIADO',
+  ENVIADO: 'ENTREGADO',
+};
+
 @Injectable()
 export class PedidosService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PedidosService.name);
   private timer?: ReturnType<typeof setInterval>;
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventos: EventosService,
+  ) {}
 
   onModuleInit() {
     const barrer = () =>
@@ -70,7 +81,7 @@ export class PedidosService implements OnModuleInit, OnModuleDestroy {
       cantidades.set(item.productoId, (cantidades.get(item.productoId) ?? 0) + item.cantidad);
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const pedido = await this.prisma.$transaction(async (tx) => {
       const detalles: { productoId: string; nombre: string; cantidad: number; precioUnit: number }[] = [];
       let total = 0;
 
@@ -110,11 +121,14 @@ export class PedidosService implements OnModuleInit, OnModuleDestroy {
         },
       });
     });
+
+    await this.eventos.pedidoCambio(pedido.id);
+    return pedido;
   }
 
   // Cancela un pedido que sigue pendiente y devuelve su stock. Si ya cambio de estado, no hace nada.
   async liberar(pedidoId: string, nuevoEstado: string) {
-    return this.prisma.$transaction(async (tx) => {
+    const liberado = await this.prisma.$transaction(async (tx) => {
       const reclamado = await tx.pedido.updateMany({
         where: { id: pedidoId, estado: ESTADO_PEDIDO.PENDIENTE_PAGO },
         data: { estado: nuevoEstado },
@@ -130,6 +144,9 @@ export class PedidosService implements OnModuleInit, OnModuleDestroy {
       }
       return true;
     });
+
+    if (liberado) await this.eventos.pedidoCambio(pedidoId);
+    return liberado;
   }
 
   async expirarVencidos() {
@@ -141,5 +158,34 @@ export class PedidosService implements OnModuleInit, OnModuleDestroy {
       await this.liberar(p.id, ESTADO_PEDIDO.EXPIRADO);
     }
     return vencidos.length;
+  }
+
+  async cambiarEnvio(pedidoId: string, envio: string) {
+    if (!OBJECT_ID.test(pedidoId)) throw new NotFoundException('Pedido no encontrado');
+
+    const pedido = await this.prisma.pedido.findUnique({ where: { id: pedidoId } });
+    if (!pedido) throw new NotFoundException('Pedido no encontrado');
+
+    if (pedido.estado !== ESTADO_PEDIDO.PAGADO) {
+      throw new BadRequestException('Solo se puede dar seguimiento de envio a pedidos pagados');
+    }
+
+    const actual = pedido.envio ?? 'POR_PREPARAR';
+    const permitido = SIGUIENTE_ENVIO[actual];
+    if (!permitido || permitido !== envio) {
+      throw new BadRequestException(
+        permitido
+          ? `Desde ${actual} el siguiente estado debe ser ${permitido}`
+          : 'Este pedido ya fue entregado',
+      );
+    }
+
+    const actualizado = await this.prisma.pedido.update({
+      where: { id: pedidoId },
+      data: { envio, envioActualizadoEn: new Date() },
+    });
+
+    await this.eventos.pedidoCambio(pedidoId);
+    return actualizado;
   }
 }

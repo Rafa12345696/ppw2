@@ -27,6 +27,12 @@ export class Pedido {
   @Field()
   estado: string;
 
+  @Field(() => String, { nullable: true })
+  envio?: string | null;
+
+  @Field(() => Date, { nullable: true })
+  envioActualizadoEn?: Date | null;
+
   @Field(() => Float)
   total: number;
 

@@ -54,6 +54,8 @@ type Pedido {
   id: ID!
   fecha: DateTime!
   estado: String!
+  envio: String
+  envioActualizadoEn: DateTime
   total: Float!
   metodoPago: String
   expiraEn: DateTime
@@ -191,6 +193,12 @@ type Estadisticas {
   pedidosPorEstado: [EstadoConteo!]!
 }
 
+type ActualizacionEstadisticas {
+  motivo: String!
+  referencia: ID
+  fecha: DateTime!
+}
+
 type Query {
   productos(skip: Int = 0, take: Int = 20): [Producto!]!
   productoPorId(id: ID!): Producto
@@ -218,6 +226,7 @@ type Mutation {
   cambiarEstadoUsuario(id: ID!, activo: Boolean!): Usuario!
   crearPedido(items: [ItemPedidoInput!]!): Pedido!
   cancelarPedido(id: ID!): Pedido!
+  cambiarEnvioPedido(id: ID!, envio: String!): Pedido!
   pagarConMercadoPago(pedidoId: ID!, datos: String!): ResultadoPagoMP!
   crearOrdenPayPal(pedidoId: ID!): String!
   capturarPayPal(pedidoId: ID!, orderId: String!): Pedido!
@@ -265,4 +274,9 @@ input ItemPedidoInput {
   nombre: String!
   cantidad: Int!
   precioUnit: Float!
+}
+
+type Subscription {
+  miPedidoActualizado(pedidoId: ID): Pedido!
+  estadisticasActualizadas: ActualizacionEstadisticas!
 }

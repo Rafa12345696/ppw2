@@ -172,8 +172,16 @@ export class EstadisticasService {
     const datosUsuario = new Map(usuariosTop.map((u) => [u.id, u]));
 
     const estados = new Map<string, number>();
-    for (const p of todos) estados.set(p.estado, (estados.get(p.estado) ?? 0) + 1);
 
+for (const p of todos) {
+ 
+  const estado =
+    p.estado === 'pendiente'
+      ? ESTADO_PEDIDO.PENDIENTE_PAGO
+      : p.estado;
+
+  estados.set(estado, (estados.get(estado) ?? 0) + 1);
+}
     return {
       ingresosTotales: redondear(ingresos),
       pedidosPagados: cantidad,
