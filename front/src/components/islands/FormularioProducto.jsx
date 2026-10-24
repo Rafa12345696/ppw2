@@ -3,28 +3,17 @@ import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
 import RequiereAdmin from './RequiereAdmin';
 
-const QUERY_CATEGORIAS = `
-  query {
-    categorias {
-      id
-      nombre
-    }
-  }
-`;
+const QUERY_CATEGORIAS = `query { categoriasAdmin { id nombre } }`;
 
 const MUTATION_CREAR = `
   mutation($data: CrearProductoInput!) {
-    crearProducto(data: $data) {
-      id
-    }
+    crearProducto(data: $data) { id }
   }
 `;
 
 const MUTATION_ACTUALIZAR = `
   mutation($id: ID!, $data: ActualizarProductoInput!) {
-    actualizarProducto(id: $id, data: $data) {
-      id
-    }
+    actualizarProducto(id: $id, data: $data) { id }
   }
 `;
 
@@ -54,11 +43,15 @@ function Formulario({ productoId }) {
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
-    graphqlRequest(QUERY_CATEGORIAS).then((data) => setCategorias(data.categorias));
+    graphqlRequest(QUERY_CATEGORIAS, {}, token).then((data) => setCategorias(data.categoriasAdmin));
 
     if (productoId) {
       graphqlRequest(QUERY_PRODUCTO, { id: productoId }).then((data) => {
         const p = data.productoPorId;
+        if (!p) {
+          setError('El producto no existe.');
+          return;
+        }
         setNombre(p.nombre);
         setPrecio(p.precio);
         setStock(p.stock);
@@ -73,23 +66,16 @@ function Formulario({ productoId }) {
     e.preventDefault();
     setEnviando(true);
     setError('');
+    const datos = { nombre, precio: Number(precio), stock: Number(stock), descripcion, imagen, categoriaId };
     try {
       if (productoId) {
-        await graphqlRequest(
-          MUTATION_ACTUALIZAR,
-          { id: productoId, data: { nombre, precio: Number(precio), stock: Number(stock), descripcion, imagen } },
-          token,
-        );
+        await graphqlRequest(MUTATION_ACTUALIZAR, { id: productoId, data: datos }, token);
       } else {
-        await graphqlRequest(
-          MUTATION_CREAR,
-          { data: { nombre, precio: Number(precio), stock: Number(stock), descripcion, imagen, categoriaId } },
-          token,
-        );
+        await graphqlRequest(MUTATION_CREAR, { data: datos }, token);
       }
       window.location.href = '/admin/productos';
     } catch (err) {
-      setError('No se pudo guardar el producto. Revisa los datos.');
+      setError(err.message || 'No se pudo guardar el producto. Revisa los datos.');
     }
     setEnviando(false);
   };
@@ -102,11 +88,11 @@ function Formulario({ productoId }) {
       </div>
       <div style={{ marginBottom: '1rem' }}>
         <label>Precio</label><br />
-        <input type="number" value={precio} onChange={(e) => setPrecio(e.target.value)} required style={{ width: '100%' }} />
+        <input type="number" min={0} step="0.01" value={precio} onChange={(e) => setPrecio(e.target.value)} required style={{ width: '100%' }} />
       </div>
       <div style={{ marginBottom: '1rem' }}>
         <label>Stock</label><br />
-        <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} required style={{ width: '100%' }} />
+        <input type="number" min={0} step={1} value={stock} onChange={(e) => setStock(e.target.value)} required style={{ width: '100%' }} />
       </div>
       <div style={{ marginBottom: '1rem' }}>
         <label>Descripcion</label><br />
@@ -116,17 +102,15 @@ function Formulario({ productoId }) {
         <label>Imagen (ruta o URL)</label><br />
         <input value={imagen} onChange={(e) => setImagen(e.target.value)} required style={{ width: '100%' }} />
       </div>
-      {!productoId && (
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Categoria</label><br />
-          <select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} required style={{ width: '100%' }}>
-            <option value="">Selecciona una categoria</option>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>{c.nombre}</option>
-            ))}
-          </select>
-        </div>
-      )}
+      <div style={{ marginBottom: '1rem' }}>
+        <label>Categoria</label><br />
+        <select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} required style={{ width: '100%' }}>
+          <option value="">Selecciona una categoria</option>
+          {categorias.map((c) => (
+            <option key={c.id} value={c.id}>{c.nombre}</option>
+          ))}
+        </select>
+      </div>
       {error && <p style={{ color: '#b00020' }}>{error}</p>}
       <button type="submit" disabled={enviando}>
         {enviando ? 'Guardando...' : productoId ? 'Actualizar' : 'Crear producto'}

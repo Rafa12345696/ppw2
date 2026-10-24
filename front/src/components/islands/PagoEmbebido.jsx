@@ -267,7 +267,7 @@ export default function PagoEmbebido() {
           onApprove: (data) => capturar(data.orderID),
           onError: (e) => {
             console.error('PayPal (tarjeta):', e);
-            setPpError('No se pudo procesar la tarjeta. Revisa los datos e intenta de nuevo.');
+            setPpError('');
             setEnviandoCard(false);
           },
           style: {
@@ -364,37 +364,21 @@ export default function PagoEmbebido() {
         <div id="mp-brick" />
       </section>
 
-      <section style={caja}>
-        <h3 style={{ marginBottom: '0.5rem' }}>PayPal</h3>
-        {!config.paypalClientId && <p>PayPal no esta configurado.</p>}
-        <div id="pp-botones" style={{ marginBottom: '1rem' }} />
+     <section style={caja}>
+  <h3 style={{ marginBottom: '0.5rem' }}>PayPal</h3>
 
-        <h4 style={{ marginBottom: '0.5rem' }}>O paga con tarjeta</h4>
-        {cardDisponible ? (
-          <div style={{ maxWidth: 420 }}>
-            <label>Nombre en la tarjeta</label>
-            <div id="pp-nombre" style={campoPayPal} />
-            <label>Numero de tarjeta</label>
-            <div id="pp-numero" style={campoPayPal} />
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <div style={{ flex: 1 }}>
-                <label>Vencimiento</label>
-                <div id="pp-vence" style={campoPayPal} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label>CVV</label>
-                <div id="pp-cvv" style={campoPayPal} />
-              </div>
-            </div>
-            <button onClick={pagarConTarjetaPayPal} disabled={enviandoCard}>
-              {enviandoCard ? 'Procesando...' : 'Pagar con tarjeta'}
-            </button>
-          </div>
-        ) : (
-          <p>El pago con tarjeta de PayPal no esta disponible. Usa el boton de PayPal o Mercado Pago.</p>
-        )}
-        {ppError && <p style={{ color: '#b00020', marginTop: '0.5rem' }}>{ppError}</p>}
-      </section>
+  {!config.paypalClientId && (
+    <p>PayPal no esta configurado.</p>
+  )}
+
+  <div id="pp-botones" style={{ marginBottom: '1rem' }} />
+
+  {ppError && (
+    <p style={{ color: '#b00020', marginTop: '0.5rem' }}>
+      {ppError}
+    </p>
+  )}
+</section>
     </div>
   );
 }

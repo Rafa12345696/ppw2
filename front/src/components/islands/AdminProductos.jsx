@@ -2,89 +2,120 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
 import RequiereAdmin from './RequiereAdmin';
+import { useListado, Paginador, BarraFiltros, Campo, estilos, dinero } from './adminUi';
 
 const QUERY = `
-  query {
-    productos(take: 100) {
-      id
-      nombre
-      precio
-      stock
+  query($filtro: FiltroProductos, $pagina: Int, $porPagina: Int) {
+    productosPagina(filtro: $filtro, pagina: $pagina, porPagina: $porPagina) {
+      total
+      pagina
+      paginas
+      items { id nombre precio stock categoria { nombre } }
     }
   }
 `;
 
-const MUTATION_ELIMINAR = `
+const CATEGORIAS = `query { categoriasAdmin { id nombre } }`;
+
+const ELIMINAR = `
   mutation($id: ID!) {
-    eliminarProducto(id: $id) {
-      id
-    }
+    eliminarProducto(id: $id) { id }
   }
 `;
 
-function ListaProductos() {
-  const token = useStore((state) => state.token);
-  const [productos, setProductos] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState('');
+const INICIAL = { categoriaId: null, stock: null };
 
-  const cargar = () => {
-    setCargando(true);
-    graphqlRequest(QUERY)
-      .then((data) => {
-        setProductos(data.productos);
-        setCargando(false);
-      })
-      .catch(() => {
-        setError('Error al cargar productos');
-        setCargando(false);
-      });
-  };
+function Lista() {
+  const token = useStore((state) => state.token);
+  const L = useListado({ query: QUERY, campo: 'productosPagina', inicial: INICIAL });
+  const [categorias, setCategorias] = useState([]);
+  const [mensaje, setMensaje] = useState('');
 
   useEffect(() => {
-    cargar();
-  }, []);
+    graphqlRequest(CATEGORIAS, {}, token)
+      .then((d) => setCategorias(d.categoriasAdmin))
+      .catch(() => {});
+  }, [token]);
 
-  const eliminar = async (id) => {
-    if (!confirm('¿Eliminar este producto?')) return;
+  const eliminar = async (p) => {
+    if (!confirm(`¿Eliminar "${p.nombre}"?`)) return;
+    setMensaje('');
     try {
-      await graphqlRequest(MUTATION_ELIMINAR, { id }, token);
-      cargar();
+      await graphqlRequest(ELIMINAR, { id: p.id }, token);
+      L.recargar();
     } catch (e) {
-      setError('No se pudo eliminar el producto');
+      setMensaje(e.message || 'No se pudo eliminar el producto');
     }
   };
-
-  if (cargando) return <p>Cargando...</p>;
-  if (error) return <p style={{ color: '#b00020' }}>{error}</p>;
 
   return (
     <div>
       <a href="/admin/nuevo"><button style={{ marginBottom: '1rem' }}>+ Nuevo producto</button></a>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ textAlign: 'left', borderBottom: '2px solid #ccc' }}>
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {productos.map((p) => (
-            <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
-              <td>{p.nombre}</td>
-              <td>${p.precio}</td>
-              <td>{p.stock}</td>
-              <td>
-                <a href={`/admin/editar/${p.id}`}>Editar</a>
-                {' | '}
-                <button onClick={() => eliminar(p.id)}>Eliminar</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      <BarraFiltros
+        escrito={L.escrito}
+        setEscrito={L.setEscrito}
+        placeholder="Nombre o descripcion"
+        limpiar={L.limpiar}
+      >
+        <Campo etiqueta="Categoria">
+          <select value={L.filtros.categoriaId || ''} onChange={(e) => L.cambiarFiltro('categoriaId', e.target.value)}>
+            <option value="">Todas</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
+          </select>
+        </Campo>
+        <Campo etiqueta="Inventario">
+          <select value={L.filtros.stock || ''} onChange={(e) => L.cambiarFiltro('stock', e.target.value)}>
+            <option value="">Todo</option>
+            <option value="BAJO">Stock bajo (1 a 5)</option>
+            <option value="AGOTADO">Agotados</option>
+          </select>
+        </Campo>
+      </BarraFiltros>
+
+      {mensaje && <p style={{ color: '#b00020' }}>{mensaje}</p>}
+      {L.error && <p style={{ color: '#b00020' }}>{L.error}</p>}
+      {!L.datos && !L.error && <p>Cargando productos...</p>}
+
+      {L.datos && (
+        <div style={{ opacity: L.cargando ? 0.6 : 1 }}>
+          {L.datos.items.length === 0 ? (
+            <p>No hay productos con esos filtros.</p>
+          ) : (
+            <table style={estilos.tabla}>
+              <thead>
+                <tr style={estilos.encabezado}>
+                  <th>Nombre</th>
+                  <th>Categoria</th>
+                  <th>Precio</th>
+                  <th>Stock</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {L.datos.items.map((p) => (
+                  <tr key={p.id} style={estilos.fila}>
+                    <td>{p.nombre}</td>
+                    <td>{p.categoria?.nombre || '—'}</td>
+                    <td>{dinero.format(p.precio)}</td>
+                    <td style={{ color: p.stock === 0 ? '#b00020' : p.stock <= 5 ? '#b26a00' : 'inherit' }}>
+                      {p.stock === 0 ? 'Agotado' : p.stock}
+                    </td>
+                    <td>
+                      <a href={`/admin/editar/${p.id}`}>Editar</a>
+                      {' | '}
+                      <button onClick={() => eliminar(p)}>Eliminar</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <Paginador pagina={L.datos.pagina} paginas={L.datos.paginas} total={L.datos.total} onCambiar={L.setPagina} />
+        </div>
+      )}
     </div>
   );
 }
@@ -92,7 +123,7 @@ function ListaProductos() {
 export default function AdminProductos() {
   return (
     <RequiereAdmin>
-      <ListaProductos />
+      <Lista />
     </RequiereAdmin>
   );
 }

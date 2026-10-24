@@ -199,6 +199,40 @@ type ActualizacionEstadisticas {
   fecha: DateTime!
 }
 
+type CategoriaAdmin {
+  id: ID!
+  nombre: String!
+  totalProductos: Int!
+}
+
+type ProductosPagina {
+  items: [Producto!]!
+  total: Int!
+  pagina: Int!
+  paginas: Int!
+}
+
+type PedidosPagina {
+  items: [Pedido!]!
+  total: Int!
+  pagina: Int!
+  paginas: Int!
+}
+
+type PagosPagina {
+  items: [PagoRegistro!]!
+  total: Int!
+  pagina: Int!
+  paginas: Int!
+}
+
+type UsuariosPagina {
+  items: [Usuario!]!
+  total: Int!
+  pagina: Int!
+  paginas: Int!
+}
+
 type Query {
   productos(skip: Int = 0, take: Int = 20): [Producto!]!
   productoPorId(id: ID!): Producto
@@ -212,6 +246,49 @@ type Query {
   configPagos: ConfigPagos!
   pagos: [PagoRegistro!]!
   estadisticas(dias: Int = 30): Estadisticas!
+  productosPagina(filtro: FiltroProductos, pagina: Int, porPagina: Int): ProductosPagina!
+  pedidosPagina(filtro: FiltroPedidos, pagina: Int, porPagina: Int): PedidosPagina!
+  facturasPagina(filtro: FiltroFacturas, pagina: Int, porPagina: Int): PedidosPagina!
+  exportarFacturasCsv(filtro: FiltroFacturas): String!
+  pagosPagina(filtro: FiltroPagos, pagina: Int, porPagina: Int): PagosPagina!
+  usuariosPagina(filtro: FiltroUsuarios, pagina: Int, porPagina: Int): UsuariosPagina!
+  categoriasAdmin: [CategoriaAdmin!]!
+}
+
+input FiltroProductos {
+  buscar: String
+  categoriaId: ID
+  stock: String
+}
+
+input FiltroPedidos {
+  buscar: String
+  estado: String
+  envio: String
+  metodoPago: String
+  desde: String
+  hasta: String
+}
+
+input FiltroFacturas {
+  buscar: String
+  metodoPago: String
+  desde: String
+  hasta: String
+}
+
+input FiltroPagos {
+  buscar: String
+  proveedor: String
+  estado: String
+  desde: String
+  hasta: String
+}
+
+input FiltroUsuarios {
+  buscar: String
+  rol: Rol
+  estado: String
 }
 
 type Mutation {
@@ -232,6 +309,11 @@ type Mutation {
   capturarPayPal(pedidoId: ID!, orderId: String!): Pedido!
   iniciarPago(pedidoId: ID!, proveedor: String!): PagoIniciado!
   confirmarPago(pedidoId: ID!): Pedido!
+  actualizarUsuario(id: ID!, data: ActualizarUsuarioInput!): Usuario!
+  restablecerPasswordUsuario(id: ID!, password: String!): Boolean!
+  crearCategoria(nombre: String!): CategoriaAdmin!
+  actualizarCategoria(id: ID!, nombre: String!): CategoriaAdmin!
+  eliminarCategoria(id: ID!): Boolean!
 }
 
 input CrearProductoInput {
@@ -249,6 +331,7 @@ input ActualizarProductoInput {
   stock: Int
   descripcion: String
   imagen: String
+  categoriaId: ID
 }
 
 input RegistrarInput {
@@ -274,6 +357,11 @@ input ItemPedidoInput {
   nombre: String!
   cantidad: Int!
   precioUnit: Float!
+}
+
+input ActualizarUsuarioInput {
+  nombre: String
+  rol: Rol
 }
 
 type Subscription {

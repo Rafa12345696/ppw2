@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { PagosModule } from './pagos/pagos.module.js';
 import { EstadisticasModule } from './estadisticas/estadisticas.module.js';
 import { EventosModule } from './eventos/eventos.module.js';
+import { BackofficeModule } from './backoffice/backoffice.module.js';
 import { HealthController } from './health.controller.js';
 import { JWT_SECRET } from './auth/auth.constants.js';
 
@@ -56,6 +57,7 @@ const jwtWs = new JwtService({ secret: JWT_SECRET });
     AuthModule,
     PagosModule,
     EstadisticasModule,
+    BackofficeModule,
   ],
 })
 export class AppModule {}

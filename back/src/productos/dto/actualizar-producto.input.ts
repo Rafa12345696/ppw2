@@ -1,4 +1,4 @@
-import { InputType, Field, Int, Float } from '@nestjs/graphql';
+import { InputType, Field, Int, Float, ID } from '@nestjs/graphql';
 
 @InputType()
 export class ActualizarProductoInput {
@@ -16,4 +16,7 @@ export class ActualizarProductoInput {
 
   @Field({ nullable: true })
   imagen?: string;
+
+  @Field(() => ID, { nullable: true })
+  categoriaId?: string;
 }
