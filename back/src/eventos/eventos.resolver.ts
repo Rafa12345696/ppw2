@@ -3,13 +3,19 @@ import { Inject, UseGuards } from '@nestjs/common';
 import { PubSub } from 'graphql-subscriptions';
 import { Pedido } from '../pedidos/pedido.model.js';
 import { ActualizacionEstadisticas } from './actualizacion-estadisticas.model.js';
+import { ProductoCambio } from './producto-cambio.model.js';
 import { Rol } from '../usuarios/usuarios.model.js';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { UserAuthContext } from '../auth/types/auth.types.js';
-import { PUB_SUB, TOPIC_ESTADISTICAS, topicPedidosDeUsuario } from './eventos.constants.js';
+import {
+  PUB_SUB,
+  TOPIC_ESTADISTICAS,
+  TOPIC_PRODUCTOS,
+  topicPedidosDeUsuario,
+} from './eventos.constants.js';
 
 @Resolver()
 export class EventosResolver {
@@ -34,5 +40,16 @@ export class EventosResolver {
   @Roles(Rol.ADMIN)
   estadisticasActualizadas() {
     return this.pubSub.asyncIterableIterator(TOPIC_ESTADISTICAS);
+  }
+
+  // Publica: el catalogo lo ve cualquiera, incluso sin cuenta. Con productoId, solo ese producto
+  @Subscription(() => ProductoCambio, {
+    filter: (payload, variables) =>
+      !variables?.productoId || payload.productoCambio.productoId === variables.productoId,
+  })
+  productoCambio(
+    @Args('productoId', { type: () => ID, nullable: true }) _productoId?: string,
+  ) {
+    return this.pubSub.asyncIterableIterator(TOPIC_PRODUCTOS);
   }
 }

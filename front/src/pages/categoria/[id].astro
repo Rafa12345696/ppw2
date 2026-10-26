@@ -1,5 +1,6 @@
 ---
 import TopBar from '../../components/TopBar.astro';
+import CatalogoVivo from '../../components/islands/CatalogoVivo.jsx';
 import { graphqlFetchSSR } from '../../api.js';
 import '../../index.css';
 
@@ -11,7 +12,9 @@ const QUERY = `
       id
       nombre
       precio
+      stock
       imagen
+      categoriaId
     }
     categoriaPorId(id: $categoriaId) {
       nombre
@@ -25,6 +28,7 @@ let error = false;
 
 try {
   const data = await graphqlFetchSSR(QUERY, { categoriaId: id });
+  if (!data) error = true;
   productos = data?.productosPorCategoria || [];
   nombreCategoria = data?.categoriaPorId?.nombre || '';
 } catch (e) {
@@ -46,24 +50,10 @@ try {
 
     {error && (
       <div style="padding: 1rem; color: #b00020;">
-        <p>Ocurrio un error al cargar los productos de esta categoria.</p>
+        <p>Ocurrio un error al cargar los productos de esta categoria. Intentando de nuevo...</p>
       </div>
     )}
 
-    {!error && productos.length === 0 && (
-      <p style="padding: 1rem;">No hay productos en esta categoria.</p>
-    )}
-
-    {!error && productos.length > 0 && (
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1rem;">
-        {productos.map((prod) => (
-          <a href={`/producto/${prod.id}`} style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 1rem; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.08); text-decoration: none; color: inherit; display: block;">
-            <img src={prod.imagen} alt={prod.nombre} style="width: 100%; height: 150px; object-fit: cover; border-radius: 6px; margin-bottom: 0.5rem;" />
-            <h4>{prod.nombre}</h4>
-            <p>${prod.precio}</p>
-          </a>
-        ))}
-      </div>
-    )}
+    <CatalogoVivo client:load productos={productos} categoriaId={id} recargarAlMontar={error} />
   </body>
 </html>

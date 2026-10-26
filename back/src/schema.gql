@@ -199,6 +199,13 @@ type ActualizacionEstadisticas {
   fecha: DateTime!
 }
 
+type ProductoCambio {
+  accion: String!
+  productoId: ID!
+  categoriaId: ID!
+  producto: Producto
+}
+
 type CategoriaAdmin {
   id: ID!
   nombre: String!
@@ -367,4 +374,5 @@ input ActualizarUsuarioInput {
 type Subscription {
   miPedidoActualizado(pedidoId: ID): Pedido!
   estadisticasActualizadas: ActualizacionEstadisticas!
+  productoCambio(productoId: ID): ProductoCambio!
 }

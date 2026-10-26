@@ -27,7 +27,7 @@ const INICIAL = { categoriaId: null, stock: null };
 
 function Lista() {
   const token = useStore((state) => state.token);
-  const L = useListado({ query: QUERY, campo: 'productosPagina', inicial: INICIAL });
+  const L = useListado({ query: QUERY, campo: 'productosPagina', inicial: INICIAL, enVivo: true });
   const [categorias, setCategorias] = useState([]);
   const [mensaje, setMensaje] = useState('');
 

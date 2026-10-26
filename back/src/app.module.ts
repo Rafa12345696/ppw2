@@ -27,21 +27,22 @@ const jwtWs = new JwtService({ secret: JWT_SECRET });
       playground: true,
       subscriptions: {
         'graphql-ws': {
-          // El navegador no puede mandar encabezados en un WebSocket: el token viaja en connectionParams
+          // El navegador no puede mandar encabezados en un WebSocket: el token viaja en connectionParams.
+          // Sin token (o con uno vencido) se conecta como invitado: solo sirve para las suscripciones publicas.
+          // Las privadas lo exigen en su guard.
           onConnect: (ctx: any) => {
             const token = ctx?.connectionParams?.authToken;
-            if (typeof token !== 'string' || !token) {
-              throw new Error('Falta el token de acceso');
-            }
-            try {
-              ctx.extra.wsPayload = jwtWs.verify(token);
-            } catch {
-              throw new Error('Token invalido o expirado');
+            if (typeof token === 'string' && token) {
+              try {
+                ctx.extra.wsPayload = jwtWs.verify(token);
+              } catch {
+                // token vencido o invalido: queda como invitado
+              }
             }
           },
         },
       },
-      // HTTP trae req; en WebSocket se arma uno con el token ya verificado
+      // HTTP trae req; en WebSocket se arma uno con el token ya verificado, si lo hubo
       context: (ctx: any) => {
         const req = ctx?.req ?? { headers: {} };
         if (ctx?.extra?.wsPayload) req.wsPayload = ctx.extra.wsPayload;

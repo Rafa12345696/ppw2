@@ -1,6 +1,6 @@
 ---
 import TopBar from '../../components/TopBar.astro';
-import AgregarAlCarrito from '../../components/islands/AgregarAlCarrito.jsx';
+import ProductoVivo from '../../components/islands/ProductoVivo.jsx';
 import { graphqlFetchSSR } from '../../api.js';
 import '../../index.css';
 
@@ -15,6 +15,7 @@ const QUERY = `
       stock
       descripcion
       imagen
+      categoriaId
     }
   }
 `;
@@ -50,17 +51,6 @@ try {
       <p style="padding: 1rem;">Producto no encontrado.</p>
     )}
 
-    {!error && producto && (
-      <div style="padding: 1rem; max-width: 500px;">
-        <img src={producto.imagen} alt={producto.nombre} style="width: 100%; height: 300px; object-fit: cover; border-radius: 10px; margin-bottom: 1rem;" />
-        <h1>{producto.nombre}</h1>
-        <p>{producto.descripcion}</p>
-        <p style="font-size: 1.3rem; font-weight: bold;">${producto.precio}</p>
-        <p style={producto.stock < 1 ? 'color: #b00020;' : producto.stock <= 5 ? 'color: #b26a00;' : 'color: #2e7d32;'}>
-          {producto.stock < 1 ? 'Agotado' : `Disponibles: ${producto.stock}`}
-        </p>
-        <AgregarAlCarrito producto={producto} client:visible />
-      </div>
-    )}
+    {!error && producto && <ProductoVivo client:load producto={producto} />}
   </body>
 </html>

@@ -45,6 +45,7 @@ export class ProductosService {
   async create(data: CrearProductoInput) {
     await this.validar(data.precio, data.stock, data.categoriaId);
     const producto = await this.prisma.producto.create({ data });
+    await this.eventos.productoCambio('CREADO', producto);
     await this.eventos.estadisticasCambio('producto', producto.id);
     return producto;
   }
@@ -62,6 +63,7 @@ export class ProductosService {
       where: { id },
       data: limpio as Prisma.ProductoUncheckedUpdateInput,
     });
+    await this.eventos.productoCambio('ACTUALIZADO', producto);
     await this.eventos.estadisticasCambio('producto', id);
     return producto;
   }
@@ -69,6 +71,7 @@ export class ProductosService {
   async remove(id: string) {
     if (!OBJECT_ID.test(id)) throw new NotFoundException('Producto no encontrado');
     const producto = await this.prisma.producto.delete({ where: { id } });
+    await this.eventos.productoCambio('ELIMINADO', producto);
     await this.eventos.estadisticasCambio('producto', id);
     return producto;
   }
