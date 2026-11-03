@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { graphqlRequest } from '../../api';
 import { suscribirse } from '../../ws';
+import Imagen from './Imagen';
 
 const CAMPOS = 'id nombre precio stock imagen categoriaId';
 
@@ -50,11 +51,26 @@ function Tarjeta({ p, resaltado }) {
         opacity: agotado ? 0.7 : 1,
       }}
     >
-      <img
-        src={p.imagen}
-        alt={p.nombre}
-        style={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 6, marginBottom: '0.5rem' }}
-      />
+      <div
+        style={{
+          width: '100%',
+          aspectRatio: '1 / 1',
+          background: '#f4f4f4',
+          borderRadius: 6,
+          marginBottom: '0.5rem',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Imagen
+          url={p.imagen}
+          alt={p.nombre}
+          anchos={[240, 360, 540, 720]}
+          sizes="(max-width: 480px) 100vw, 280px"
+        />
+      </div>
       <h4>{p.nombre}</h4>
       <p>${p.precio}</p>
       {agotado ? (

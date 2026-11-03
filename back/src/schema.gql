@@ -240,6 +240,16 @@ type UsuariosPagina {
   paginas: Int!
 }
 
+type FirmaSubida {
+  cloudName: String!
+  apiKey: String!
+  timestamp: Int!
+  folder: String!
+  allowedFormats: String!
+  signature: String!
+  urlSubida: String!
+}
+
 type Query {
   productos(skip: Int = 0, take: Int = 20): [Producto!]!
   productoPorId(id: ID!): Producto
@@ -321,6 +331,7 @@ type Mutation {
   crearCategoria(nombre: String!): CategoriaAdmin!
   actualizarCategoria(id: ID!, nombre: String!): CategoriaAdmin!
   eliminarCategoria(id: ID!): Boolean!
+  firmarSubidaImagen: FirmaSubida!
 }
 
 input CrearProductoInput {

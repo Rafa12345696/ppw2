@@ -13,6 +13,7 @@ import { PagosModule } from './pagos/pagos.module.js';
 import { EstadisticasModule } from './estadisticas/estadisticas.module.js';
 import { EventosModule } from './eventos/eventos.module.js';
 import { BackofficeModule } from './backoffice/backoffice.module.js';
+import { ImagenesModule } from './imagenes/imagenes.module.js';
 import { HealthController } from './health.controller.js';
 import { JWT_SECRET } from './auth/auth.constants.js';
 
@@ -59,6 +60,7 @@ const jwtWs = new JwtService({ secret: JWT_SECRET });
     PagosModule,
     EstadisticasModule,
     BackofficeModule,
+    ImagenesModule,
   ],
 })
 export class AppModule {}

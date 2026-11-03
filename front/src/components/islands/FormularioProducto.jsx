@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
 import RequiereAdmin from './RequiereAdmin';
+import SubirImagen from './SubirImagen';
 
 const QUERY_CATEGORIAS = `query { categoriasAdmin { id nombre } }`;
 
@@ -64,9 +65,14 @@ function Formulario({ productoId }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setEnviando(true);
     setError('');
-    const datos = { nombre, precio: Number(precio), stock: Number(stock), descripcion, imagen, categoriaId };
+    if (!imagen.trim()) {
+      setError('Sube una imagen del producto.');
+      return;
+    }
+
+    setEnviando(true);
+    const datos = { nombre, precio: Number(precio), stock: Number(stock), descripcion, imagen: imagen.trim(), categoriaId };
     try {
       if (productoId) {
         await graphqlRequest(MUTATION_ACTUALIZAR, { id: productoId, data: datos }, token);
@@ -81,7 +87,7 @@ function Formulario({ productoId }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 400 }}>
+    <form onSubmit={handleSubmit} style={{ maxWidth: 420 }}>
       <div style={{ marginBottom: '1rem' }}>
         <label>Nombre</label><br />
         <input value={nombre} onChange={(e) => setNombre(e.target.value)} required style={{ width: '100%' }} />
@@ -99,8 +105,8 @@ function Formulario({ productoId }) {
         <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} required style={{ width: '100%' }} />
       </div>
       <div style={{ marginBottom: '1rem' }}>
-        <label>Imagen (ruta o URL)</label><br />
-        <input value={imagen} onChange={(e) => setImagen(e.target.value)} required style={{ width: '100%' }} />
+        <label>Imagen</label>
+        <SubirImagen valor={imagen} onCambio={setImagen} />
       </div>
       <div style={{ marginBottom: '1rem' }}>
         <label>Categoria</label><br />

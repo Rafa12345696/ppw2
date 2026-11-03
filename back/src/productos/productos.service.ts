@@ -28,13 +28,29 @@ export class ProductosService {
     return this.prisma.producto.findMany({ where: { categoriaId } });
   }
 
-  private async validar(precio?: number | null, stock?: number | null, categoriaId?: string | null) {
+  private validarImagen(imagen?: string | null) {
+    if (imagen === undefined || imagen === null) return;
+    const v = imagen.trim();
+    const ruta = v.startsWith('/') && !v.startsWith('//');
+    const https = /^https:\/\//i.test(v);
+    if (!v || v.length > 500 || !(ruta || https)) {
+      throw new BadRequestException('La imagen debe ser una ruta del sitio o una URL https');
+    }
+  }
+
+  private async validar(
+    precio?: number | null,
+    stock?: number | null,
+    categoriaId?: string | null,
+    imagen?: string | null,
+  ) {
     if (precio !== undefined && precio !== null && !(precio >= 0)) {
       throw new BadRequestException('El precio no puede ser negativo');
     }
     if (stock !== undefined && stock !== null && stock < 0) {
       throw new BadRequestException('El stock no puede ser negativo');
     }
+    this.validarImagen(imagen);
     if (categoriaId) {
       if (!OBJECT_ID.test(categoriaId)) throw new BadRequestException('Categoria no valida');
       const existe = await this.prisma.categoria.findUnique({ where: { id: categoriaId } });
@@ -43,8 +59,10 @@ export class ProductosService {
   }
 
   async create(data: CrearProductoInput) {
-    await this.validar(data.precio, data.stock, data.categoriaId);
-    const producto = await this.prisma.producto.create({ data });
+    await this.validar(data.precio, data.stock, data.categoriaId, data.imagen);
+    const producto = await this.prisma.producto.create({
+      data: { ...data, imagen: data.imagen.trim() },
+    });
     await this.eventos.productoCambio('CREADO', producto);
     await this.eventos.estadisticasCambio('producto', producto.id);
     return producto;
@@ -54,10 +72,11 @@ export class ProductosService {
     if (!OBJECT_ID.test(id)) throw new NotFoundException('Producto no encontrado');
 
     // GraphQL manda null en los campos que no se tocan: se descartan
-    const limpio = Object.fromEntries(
+    const limpio: Record<string, unknown> = Object.fromEntries(
       Object.entries(data).filter(([, v]) => v !== undefined && v !== null),
     );
-    await this.validar(data.precio, data.stock, data.categoriaId);
+    await this.validar(data.precio, data.stock, data.categoriaId, data.imagen);
+    if (typeof limpio.imagen === 'string') limpio.imagen = limpio.imagen.trim();
 
     const producto = await this.prisma.producto.update({
       where: { id },
