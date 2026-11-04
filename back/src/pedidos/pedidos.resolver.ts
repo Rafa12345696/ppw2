@@ -13,7 +13,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { UserAuthContext } from '../auth/types/auth.types.js';
 
-const OBJECT_ID = /^[a-f\d]{24}$/i;
+import { OBJECT_ID } from '../comun/object-id.js';
 
 @Resolver(() => Pedido)
 export class PedidosResolver {

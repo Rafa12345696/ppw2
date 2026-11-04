@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { graphqlRequest } from '../../api';
 import { suscribirse } from '../../ws';
 import AgregarAlCarrito from './AgregarAlCarrito';
+import Imagen from './Imagen';
+import { Precio, Etiquetas, Existencia } from './Precio';
+import { IcoCandado, IcoReloj, IcoCamion } from './Iconos';
 
-const CAMPOS = 'id nombre precio stock descripcion imagen categoriaId';
+const CAMPOS = 'id nombre precio precioAntes premium stock descripcion imagen categoriaId';
 
 const SUB = `
   subscription($id: ID) {
@@ -47,7 +50,7 @@ export default function ProductoVivo({ producto: inicial }) {
           // Al reconectar se pierden los avisos de mientras estuvo caido: se vuelve a consultar
           if (yaConecto.current) {
             graphqlRequest(QUERY, { id: inicial.id })
-              .then((d) => (d.productoPorId ? setProducto(d.productoPorId) : setEliminado(true)))
+              .then((d) => (d.productoPorId ? setProducto((a) => ({ ...a, ...d.productoPorId })) : setEliminado(true)))
               .catch(() => {});
           }
           yaConecto.current = true;
@@ -63,47 +66,54 @@ export default function ProductoVivo({ producto: inicial }) {
 
   if (eliminado) {
     return (
-      <div style={{ padding: '1rem' }}>
-        <h2>Este producto ya no esta disponible</h2>
-        <p style={{ marginTop: '1rem' }}><a href="/tienda">Volver a la tienda</a></p>
+      <div className="vacio">
+        <h1>Este producto ya no esta disponible</h1>
+        <p>Lo retiramos del catalogo mientras lo veias.</p>
+        <a className="btn btn-neutro" href="/tienda">Volver a la tienda</a>
       </div>
     );
   }
 
-  const agotado = producto.stock < 1;
-
   return (
-    <div style={{ padding: '1rem', maxWidth: 500 }}>
-      <img
-        src={producto.imagen}
-        alt={producto.nombre}
-        style={{ width: '100%', height: 300, objectFit: 'cover', borderRadius: 10, marginBottom: '1rem' }}
-      />
-      <h1>{producto.nombre}</h1>
-      <p>{producto.descripcion}</p>
-      <p
-        style={{
-          fontSize: '1.3rem',
-          fontWeight: 'bold',
-          background: cambio ? 'rgba(184,134,11,0.25)' : 'transparent',
-          transition: 'background 0.3s',
-        }}
-      >
-        ${producto.precio}
-      </p>
-      <p
-        style={{
-          color: agotado ? '#b00020' : producto.stock <= 5 ? '#b26a00' : '#2e7d32',
-          background: cambio ? 'rgba(184,134,11,0.25)' : 'transparent',
-          transition: 'background 0.3s',
-        }}
-      >
-        {agotado ? 'Agotado' : `Disponibles: ${producto.stock}`}
-      </p>
-      <AgregarAlCarrito producto={producto} />
-      <p style={{ marginTop: '1rem', fontSize: '0.8rem' }}>
-        {enVivo ? 'Informacion en vivo' : 'Sin conexion en vivo'}
-      </p>
+    <div className="detalle-producto">
+      <div className="detalle-imagen">
+        <Imagen
+          url={producto.imagen}
+          alt={producto.nombre}
+          anchos={[480, 720, 960, 1200]}
+          sizes="(max-width: 900px) 100vw, 640px"
+          prioridad
+        />
+      </div>
+
+      <div className="pila-lg">
+        <div className="pila-sm">
+          <Etiquetas producto={producto} />
+          {producto.categoria && <span className="producto-categoria">{producto.categoria.nombre}</span>}
+          <h1>{producto.nombre}</h1>
+        </div>
+
+        {/* El cambio de precio o existencia en vivo se anuncia a lectores de pantalla */}
+        <div className="pila-sm" aria-live="polite" style={{ transition: 'background-color 0.4s', backgroundColor: cambio ? 'var(--c-marca-suave)' : 'transparent', borderRadius: 4 }}>
+          <Precio producto={producto} grande />
+          <Existencia stock={producto.stock} />
+        </div>
+
+        {producto.descripcion && <p className="texto-2" style={{ maxWidth: 520 }}>{producto.descripcion}</p>}
+
+        <AgregarAlCarrito producto={producto} />
+
+        <ul className="lista-confianza">
+          <li><IcoCandado /> Pago seguro con Mercado Pago o PayPal</li>
+          <li><IcoReloj /> Apartamos tus productos 30 minutos mientras pagas</li>
+          <li><IcoCamion /> Sigue tu pedido en vivo desde Mis pedidos</li>
+        </ul>
+
+        <span className="en-vivo" data-activo={enVivo}>
+          <span className="punto" aria-hidden="true" />
+          {enVivo ? 'Precio y existencias en vivo' : 'Sin conexion en vivo'}
+        </span>
+      </div>
     </div>
   );
 }

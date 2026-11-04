@@ -1,0 +1,61 @@
+---
+// Estructura comun de todas las paginas: <head>, letras, barra superior, contenido y pie.
+// Cada pagina solo pone su contenido dentro de <Base titulo="...">.
+import '../index.css';
+import TopBar from '../components/TopBar.astro';
+import AdminNav from '../components/AdminNav.astro';
+
+interface Props {
+  titulo: string;
+  descripcion?: string;
+  admin?: boolean;       // agrega la navegacion del panel
+  sinCabecera?: boolean; // portada: sin barra superior ni pie
+}
+
+const {
+  titulo,
+  descripcion = 'Elixir: tienda en linea de licores con pago seguro y seguimiento de tu pedido.',
+  admin = false,
+  sinCabecera = false,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{titulo} · Elixir</title>
+    <meta name="description" content={descripcion} />
+    <meta name="theme-color" content="#1c1c1c" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+    />
+  </head>
+  <body>
+    <a class="saltar no-imprimir" href="#contenido">Saltar al contenido</a>
+    {!sinCabecera && <div class="no-imprimir"><TopBar admin={admin} /></div>}
+    {admin && <div class="no-imprimir"><AdminNav /></div>}
+
+    <main id="contenido" tabindex="-1">
+      <slot />
+    </main>
+
+    {!sinCabecera && (
+      <footer class="pie no-imprimir">
+        <div class="contenedor">
+          <span>© 2026 Elixir · Proyecto de Programacion Web 2</span>
+          <nav aria-label="Pie de pagina">
+            <a href="/tienda">Tienda</a>
+            <a href="/mis-pedidos">Mis pedidos</a>
+          </nav>
+          <span>Evita el exceso. Prohibida la venta a menores de edad.</span>
+        </div>
+      </footer>
+    )}
+  </body>
+</html>

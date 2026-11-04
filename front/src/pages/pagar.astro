@@ -1,20 +1,11 @@
 ---
 export const prerender = true;
-import TopBar from '../components/TopBar.astro';
+import Base from '../layouts/Base.astro';
 import PagoEmbebido from '../components/islands/PagoEmbebido.jsx';
-import '../index.css';
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pagar - Elixir</title>
-  </head>
-  <body>
-    <TopBar />
-    <div style="padding: 2rem;">
-      <PagoEmbebido client:load />
-    </div>
-  </body>
-</html>
+<Base titulo="Pagar pedido">
+  <div class="contenedor pagina">
+    <PagoEmbebido client:load />
+  </div>
+</Base>

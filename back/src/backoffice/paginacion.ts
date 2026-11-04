@@ -1,7 +1,7 @@
 import type { Type } from '@nestjs/common';
 import { ObjectType, Field, Int } from '@nestjs/graphql';
 
-export const OBJECT_ID = /^[a-f\d]{24}$/i;
+export { OBJECT_ID } from '../comun/object-id.js';
 
 // Molde para respuestas paginadas: { items, total, pagina, paginas }
 export function Paginado<T>(clase: Type<T>) {

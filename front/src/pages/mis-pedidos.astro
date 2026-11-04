@@ -1,21 +1,17 @@
 ---
 export const prerender = true;
-import TopBar from '../components/TopBar.astro';
+import Base from '../layouts/Base.astro';
 import MisPedidos from '../components/islands/MisPedidos.jsx';
-import '../index.css';
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mis pedidos — Elixir</title>
-  </head>
-  <body>
-    <TopBar />
-    <div style="padding: 2rem;">
-      <h2>Mis pedidos</h2>
-      <MisPedidos client:load />
+<Base titulo="Mis pedidos">
+  <div class="contenedor-angosto pagina">
+    <div class="encabezado-pagina">
+      <div>
+        <h1>Mis pedidos</h1>
+        <p>Consulta el estado de tus compras. Se actualiza solo.</p>
+      </div>
     </div>
-  </body>
-</html>
+    <MisPedidos client:load />
+  </div>
+</Base>

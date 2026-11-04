@@ -49,62 +49,65 @@ const QUERY = `
 `;
 
 const dinero = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
-const COLORES = ['#b8860b', '#1a1a1a', '#2e7d32', '#1565c0', '#b00020', '#6a1b9a'];
+// Paleta de graficas: marca, negro, azul, ocre, verde, gris (distinguibles tambien por luminosidad)
+const COLORES = ['#6b1d2a', '#1c1c1c', '#1f4e79', '#b07a1f', '#1e6b3a', '#9a9a97'];
+const MARCA = '#6b1d2a';
+const EJE = { fontSize: 12, fill: '#5c5c5c' };
 const METODOS = { MERCADOPAGO: 'Mercado Pago', PAYPAL: 'PayPal', DESCONOCIDO: 'Sin dato' };
 const ESTADOS = { PENDIENTE_PAGO: 'Pendiente', PAGADO: 'Pagado', CANCELADO: 'Cancelado', EXPIRADO: 'Expirado' };
 
-const estiloCaja = { border: '1px solid #e0e0e0', borderRadius: 10, padding: '1rem', background: 'white' };
-
 function Variacion({ actual, anterior }) {
   if (!anterior) {
-    return <div style={{ fontSize: '0.8rem', color: '#666' }}>Sin periodo anterior para comparar</div>;
+    return <span className="texto-3">Sin periodo anterior para comparar</span>;
   }
   const pct = ((actual - anterior) / anterior) * 100;
   const sube = pct >= 0;
   return (
-    <div style={{ fontSize: '0.8rem', color: sube ? '#2e7d32' : '#b00020' }}>
-      {sube ? '+' : ''}{pct.toFixed(1)}% vs periodo anterior
-    </div>
+    <span className={`variacion ${sube ? 'variacion-sube' : 'variacion-baja'}`}>
+      {sube ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}% <span className="texto-3">vs periodo anterior</span>
+    </span>
   );
 }
 
 function Tarjeta({ titulo, valor, extra }) {
   return (
-    <div style={{ ...estiloCaja, flex: '1 1 170px' }}>
-      <div style={{ fontSize: '0.85rem', color: '#666' }}>{titulo}</div>
-      <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{valor}</div>
+    <div className="kpi">
+      <span className="titulo-kpi">{titulo}</span>
+      <span className="valor-kpi">{valor}</span>
       {extra}
     </div>
   );
 }
 
+// Grafica dentro de una tarjeta; la grafica es decorativa para lectores de pantalla:
+// los mismos datos estan en las listas y tarjetas de numeros
 function Caja({ titulo, vacio, children }) {
   return (
-    <div style={{ ...estiloCaja, flex: '1 1 380px' }}>
-      <h4 style={{ marginBottom: '0.5rem' }}>{titulo}</h4>
+    <figure className="tarjeta tarjeta-sm pila-sm" style={{ margin: 0 }}>
+      <figcaption><h3 style={{ fontSize: 'var(--t-md)' }}>{titulo}</h3></figcaption>
       {vacio ? (
-        <p style={{ color: '#666' }}>Sin datos en este periodo.</p>
+        <p className="texto-3" style={{ padding: '32px 0', textAlign: 'center' }}>Sin datos en este periodo.</p>
       ) : (
         <div style={{ width: '100%', height: 260 }}>{children}</div>
       )}
-    </div>
+    </figure>
   );
 }
 
 function Bloque({ titulo, children }) {
   return (
-    <div style={{ ...estiloCaja, flex: '1 1 380px' }}>
-      <h4 style={{ marginBottom: '0.5rem' }}>{titulo}</h4>
+    <div className="tarjeta tarjeta-sm pila-sm">
+      <h3 style={{ fontSize: 'var(--t-md)' }}>{titulo}</h3>
       {children}
     </div>
   );
 }
 
-function Seccion({ titulo, children }) {
+function Seccion({ titulo, children, kpis = false }) {
   return (
-    <section style={{ marginBottom: '1.5rem' }}>
-      <h3 style={{ marginBottom: '0.75rem' }}>{titulo}</h3>
-      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>{children}</div>
+    <section className="pila" style={{ marginBottom: 32 }} aria-label={titulo}>
+      <h2 style={{ fontSize: 'var(--t-lg)' }}>{titulo}</h2>
+      <div className={kpis ? 'kpis' : 'graficas'}>{children}</div>
     </section>
   );
 }
@@ -113,13 +116,13 @@ function Dona({ datos, formato }) {
   return (
     <ResponsiveContainer>
       <PieChart>
-        <Pie data={datos} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90}>
+        <Pie data={datos} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} stroke="#fff" strokeWidth={2}>
           {datos.map((_, i) => (
             <Cell key={i} fill={COLORES[i % COLORES.length]} />
           ))}
         </Pie>
         <Tooltip formatter={formato} />
-        <Legend />
+        <Legend wrapperStyle={{ fontSize: 12 }} />
       </PieChart>
     </ResponsiveContainer>
   );
@@ -166,8 +169,8 @@ function Panel() {
     };
   }, [dias, token, refresco]);
 
-  if (error) return <p style={{ color: '#b00020' }}>{error}</p>;
-  if (!d) return <p>Cargando estadisticas...</p>;
+  if (error) return <div className="alerta alerta-error" role="alert">{error}</div>;
+  if (!d) return <div className="esqueleto" style={{ height: 320 }} aria-label="Cargando estadisticas" />;
 
   const sinVentas = d.pedidosPagados === 0;
   const metodos = d.ventasPorMetodo.map((m) => ({ name: METODOS[m.metodo] || m.metodo, value: m.total }));
@@ -176,18 +179,24 @@ function Panel() {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', alignItems: 'center' }}>
-        <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: enVivo ? '#2e7d32' : '#999' }} />
-        <span style={{ marginRight: '0.75rem' }}>{enVivo ? 'En vivo' : 'Sin conexion en vivo'}</span>
-        <span>Periodo:</span>
-        {[7, 30, 90].map((n) => (
-          <button key={n} onClick={() => setDias(n)} disabled={dias === n}>
-            {n} dias
-          </button>
-        ))}
+      <div className="fila-entre" style={{ marginBottom: 24 }}>
+        <span className="en-vivo" data-activo={enVivo}>
+          <span className="punto" aria-hidden="true" />
+          {enVivo ? 'En vivo' : 'Sin conexion en vivo'}
+        </span>
+        <div className="fila" style={{ gap: 8 }}>
+          <span className="texto-2" id="periodo">Periodo</span>
+          <div className="segmentado" role="group" aria-labelledby="periodo">
+            {[7, 30, 90].map((n) => (
+              <button key={n} type="button" aria-pressed={dias === n} onClick={() => setDias(n)}>
+                {n} dias
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <Seccion titulo="Resumen">
+      <Seccion titulo="Resumen" kpis>
         <Tarjeta
           titulo="Ingresos"
           valor={dinero.format(d.ingresosTotales)}
@@ -202,7 +211,7 @@ function Panel() {
         <Tarjeta
           titulo="Conversion"
           valor={`${d.tasaConversion}%`}
-          extra={<div style={{ fontSize: '0.8rem', color: '#666' }}>{d.pedidosCreados} pedidos creados</div>}
+          extra={<span className="texto-3">{d.pedidosCreados} pedidos creados</span>}
         />
         <Tarjeta titulo="Usuarios nuevos" valor={d.usuariosNuevos} />
         <Tarjeta titulo="Clientes recurrentes" valor={d.clientesRecurrentes} />
@@ -213,11 +222,11 @@ function Panel() {
         <Caja titulo="Ventas por dia" vacio={sinVentas}>
           <ResponsiveContainer>
             <LineChart data={d.ventasPorDia}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="fecha" tickFormatter={(f) => f.slice(5)} />
-              <YAxis />
+              <CartesianGrid stroke="#e2e2e0" vertical={false} />
+              <XAxis dataKey="fecha" tickFormatter={(f) => f.slice(5)} tick={EJE} />
+              <YAxis tick={EJE} />
               <Tooltip formatter={(v) => dinero.format(v)} />
-              <Line type="monotone" dataKey="total" name="Ventas" stroke="#b8860b" strokeWidth={2} />
+              <Line type="monotone" dataKey="total" name="Ventas" stroke={MARCA} strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </Caja>
@@ -225,11 +234,11 @@ function Panel() {
         <Caja titulo="Ventas por dia de la semana" vacio={sinVentas}>
           <ResponsiveContainer>
             <BarChart data={d.ventasPorDiaSemana}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="dia" />
-              <YAxis />
+              <CartesianGrid stroke="#e2e2e0" vertical={false} />
+              <XAxis dataKey="dia" tick={EJE} />
+              <YAxis tick={EJE} />
               <Tooltip formatter={(v) => dinero.format(v)} />
-              <Bar dataKey="total" name="Ventas" fill="#b8860b" />
+              <Bar dataKey="total" name="Ventas" fill={MARCA} />
             </BarChart>
           </ResponsiveContainer>
         </Caja>
@@ -237,11 +246,11 @@ function Panel() {
         <Caja titulo="Pedidos por hora del dia" vacio={sinVentas}>
           <ResponsiveContainer>
             <BarChart data={d.ventasPorHora}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="hora" tickFormatter={(h) => `${h}h`} interval={2} />
-              <YAxis allowDecimals={false} />
+              <CartesianGrid stroke="#e2e2e0" vertical={false} />
+              <XAxis dataKey="hora" tickFormatter={(h) => `${h}h`} interval={2} tick={EJE} />
+              <YAxis allowDecimals={false} tick={EJE} />
               <Tooltip labelFormatter={(h) => `${h}:00 h`} />
-              <Bar dataKey="pedidos" name="Pedidos" fill="#1a1a1a" />
+              <Bar dataKey="pedidos" name="Pedidos" fill="#1c1c1c" />
             </BarChart>
           </ResponsiveContainer>
         </Caja>
@@ -251,11 +260,11 @@ function Panel() {
         <Caja titulo="Mas vendidos (unidades)" vacio={d.topProductos.length === 0}>
           <ResponsiveContainer>
             <BarChart data={d.topProductos} layout="vertical" margin={{ left: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" allowDecimals={false} />
-              <YAxis type="category" dataKey="nombre" width={120} />
+              <CartesianGrid stroke="#e2e2e0" vertical={false} />
+              <XAxis type="number" allowDecimals={false} tick={EJE} />
+              <YAxis type="category" dataKey="nombre" width={130} tick={EJE} />
               <Tooltip />
-              <Bar dataKey="unidades" name="Unidades" fill="#b8860b" />
+              <Bar dataKey="unidades" name="Unidades" fill={MARCA} />
             </BarChart>
           </ResponsiveContainer>
         </Caja>
@@ -266,12 +275,13 @@ function Panel() {
 
         <Bloque titulo="Se compran juntos">
           {d.productosRelacionados.length === 0 ? (
-            <p style={{ color: '#666' }}>Aun no hay pedidos con 2 o mas productos distintos.</p>
+            <p className="texto-3">Aun no hay pedidos con 2 o mas productos distintos.</p>
           ) : (
-            <ul style={{ paddingLeft: '1.2rem' }}>
+            <ul className="lista-simple">
               {d.productosRelacionados.map((p, i) => (
                 <li key={i}>
-                  {p.a} + {p.b}: <strong>{p.veces}</strong> {p.veces === 1 ? 'vez' : 'veces'}
+                  <span>{p.a} + {p.b}</span>
+                  <strong className="num">{p.veces} {p.veces === 1 ? 'vez' : 'veces'}</strong>
                 </li>
               ))}
             </ul>
@@ -280,11 +290,14 @@ function Panel() {
 
         <Bloque titulo="Sin movimiento en el periodo">
           {d.productosSinMovimiento.length === 0 ? (
-            <p style={{ color: '#666' }}>Todos los productos con stock tuvieron ventas.</p>
+            <p className="texto-3">Todos los productos con stock tuvieron ventas.</p>
           ) : (
-            <ul style={{ paddingLeft: '1.2rem' }}>
+            <ul className="lista-simple">
               {d.productosSinMovimiento.map((p) => (
-                <li key={p.id}>{p.nombre}: {p.stock} piezas sin vender</li>
+                <li key={p.id}>
+                  <span>{p.nombre}</span>
+                  <span className="num texto-2">{p.stock} sin vender</span>
+                </li>
               ))}
             </ul>
           )}
@@ -292,12 +305,17 @@ function Panel() {
 
         <Bloque titulo="Stock bajo (5 o menos)">
           {d.stockBajo.length === 0 ? (
-            <p style={{ color: '#666' }}>Todo el inventario esta bien.</p>
+            <p className="texto-3">Todo el inventario esta bien.</p>
           ) : (
-            <ul style={{ paddingLeft: '1.2rem' }}>
+            <ul className="lista-simple">
               {d.stockBajo.map((p) => (
-                <li key={p.id} style={{ color: p.stock === 0 ? '#b00020' : 'inherit' }}>
-                  {p.nombre}: {p.stock === 0 ? 'agotado' : `${p.stock} piezas`}
+                <li key={p.id}>
+                  <span>{p.nombre}</span>
+                  {p.stock === 0 ? (
+                    <span className="etiqueta etiqueta-error">Agotado</span>
+                  ) : (
+                    <span className="etiqueta etiqueta-aviso">{p.stock} piezas</span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -309,36 +327,36 @@ function Panel() {
         <Caja titulo="Clientes que mas gastan" vacio={d.topClientes.length === 0}>
           <ResponsiveContainer>
             <BarChart data={d.topClientes} layout="vertical" margin={{ left: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis type="category" dataKey="nombre" width={120} />
+              <CartesianGrid stroke="#e2e2e0" vertical={false} />
+              <XAxis type="number" tick={EJE} />
+              <YAxis type="category" dataKey="nombre" width={130} tick={EJE} />
               <Tooltip formatter={(v) => dinero.format(v)} />
-              <Bar dataKey="total" name="Gastado" fill="#2e7d32" />
+              <Bar dataKey="total" name="Gastado" fill="#1e6b3a" />
             </BarChart>
           </ResponsiveContainer>
         </Caja>
 
         <Bloque titulo="Clientes destacados">
           {d.topClientes.length === 0 ? (
-            <p style={{ color: '#666' }}>Aun no hay compras pagadas.</p>
+            <p className="texto-3">Aun no hay compras pagadas.</p>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className="tabla">
               <thead>
-                <tr style={{ textAlign: 'left', borderBottom: '2px solid #ccc' }}>
-                  <th>Cliente</th>
-                  <th>Pedidos</th>
-                  <th>Gastado</th>
+                <tr>
+                  <th scope="col">Cliente</th>
+                  <th scope="col" className="derecha">Pedidos</th>
+                  <th scope="col" className="derecha">Gastado</th>
                 </tr>
               </thead>
               <tbody>
                 {d.topClientes.map((c) => (
-                  <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
+                  <tr key={c.id}>
                     <td>
                       {c.nombre}
-                      <div style={{ fontSize: '0.8rem', color: '#666' }}>{c.email}</div>
+                      <div className="texto-3">{c.email}</div>
                     </td>
-                    <td>{c.pedidos}</td>
-                    <td>{dinero.format(c.total)}</td>
+                    <td className="derecha num">{c.pedidos}</td>
+                    <td className="derecha num">{dinero.format(c.total)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -349,11 +367,11 @@ function Panel() {
         <Caja titulo="Nuevos registros por dia" vacio={d.usuariosNuevos === 0}>
           <ResponsiveContainer>
             <LineChart data={d.usuariosPorDia}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="fecha" tickFormatter={(f) => f.slice(5)} />
-              <YAxis allowDecimals={false} />
+              <CartesianGrid stroke="#e2e2e0" vertical={false} />
+              <XAxis dataKey="fecha" tickFormatter={(f) => f.slice(5)} tick={EJE} />
+              <YAxis allowDecimals={false} tick={EJE} />
               <Tooltip />
-              <Line type="monotone" dataKey="cantidad" name="Registros" stroke="#1565c0" strokeWidth={2} />
+              <Line type="monotone" dataKey="cantidad" name="Registros" stroke="#1f4e79" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </Caja>

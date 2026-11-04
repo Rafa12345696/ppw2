@@ -12,6 +12,8 @@ type Producto {
   id: ID!
   nombre: String!
   precio: Float!
+  precioAntes: Float
+  premium: Boolean
   stock: Int!
   descripcion: String!
   imagen: String!
@@ -25,6 +27,8 @@ type Usuario {
   email: String!
   rol: Rol!
   activo: Boolean
+  fechaNacimiento: DateTime
+  telefono: String
   createdAt: DateTime
 }
 
@@ -250,9 +254,27 @@ type FirmaSubida {
   urlSubida: String!
 }
 
+type RegistroBitacora {
+  id: ID!
+  fecha: DateTime!
+  adminEmail: String!
+  accion: String!
+  entidad: String!
+  entidadId: String
+  detalle: String
+}
+
+type BitacoraPagina {
+  items: [RegistroBitacora!]!
+  total: Int!
+  pagina: Int!
+  paginas: Int!
+}
+
 type Query {
   productos(skip: Int = 0, take: Int = 20): [Producto!]!
   productoPorId(id: ID!): Producto
+  masVendidos(limite: Int = 8): [Producto!]!
   productosPorCategoria(categoriaId: ID!): [Producto!]!
   usuarios: [Usuario!]!
   pedidos: [Pedido!]!
@@ -270,6 +292,7 @@ type Query {
   pagosPagina(filtro: FiltroPagos, pagina: Int, porPagina: Int): PagosPagina!
   usuariosPagina(filtro: FiltroUsuarios, pagina: Int, porPagina: Int): UsuariosPagina!
   categoriasAdmin: [CategoriaAdmin!]!
+  bitacoraPagina(filtro: FiltroBitacora, pagina: Int, porPagina: Int): BitacoraPagina!
 }
 
 input FiltroProductos {
@@ -308,6 +331,13 @@ input FiltroUsuarios {
   estado: String
 }
 
+input FiltroBitacora {
+  buscar: String
+  entidad: String
+  desde: String
+  hasta: String
+}
+
 type Mutation {
   crearProducto(data: CrearProductoInput!): Producto!
   actualizarProducto(id: ID!, data: ActualizarProductoInput!): Producto!
@@ -318,6 +348,8 @@ type Mutation {
   restablecerPassword(token: String!, password: String!): Boolean!
   crearUsuario(data: CrearUsuarioInput!): Usuario!
   cambiarEstadoUsuario(id: ID!, activo: Boolean!): Usuario!
+  confirmarFechaNacimiento(fecha: String!): Usuario!
+  actualizarTelefono(telefono: String): Usuario!
   crearPedido(items: [ItemPedidoInput!]!): Pedido!
   cancelarPedido(id: ID!): Pedido!
   cambiarEnvioPedido(id: ID!, envio: String!): Pedido!
@@ -341,6 +373,8 @@ input CrearProductoInput {
   descripcion: String!
   imagen: String!
   categoriaId: ID!
+  precioAntes: Float
+  premium: Boolean
 }
 
 input ActualizarProductoInput {
@@ -350,12 +384,16 @@ input ActualizarProductoInput {
   descripcion: String
   imagen: String
   categoriaId: ID
+  precioAntes: Float
+  premium: Boolean
 }
 
 input RegistrarInput {
   nombre: String!
   email: String!
   password: String!
+  fechaNacimiento: String!
+  telefono: String
 }
 
 input LoginInput {

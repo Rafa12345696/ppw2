@@ -1,8 +1,8 @@
 ---
-import TopBar from '../../components/TopBar.astro';
+// Sin prerender: los productos se piden en cada visita
+import Base from '../../layouts/Base.astro';
 import CatalogoVivo from '../../components/islands/CatalogoVivo.jsx';
 import { graphqlFetchSSR } from '../../api.js';
-import '../../index.css';
 
 const { id } = Astro.params;
 
@@ -12,48 +12,73 @@ const QUERY = `
       id
       nombre
       precio
+      precioAntes
+      premium
       stock
       imagen
       categoriaId
     }
     categoriaPorId(id: $categoriaId) {
+      id
       nombre
+    }
+    masVendidos(limite: 8) {
+      id
     }
   }
 `;
 
 let productos = [];
-let nombreCategoria = '';
+let masVendidos = [];
+let categoria = null;
 let error = false;
 
 try {
   const data = await graphqlFetchSSR(QUERY, { categoriaId: id });
   if (!data) error = true;
   productos = data?.productosPorCategoria || [];
-  nombreCategoria = data?.categoriaPorId?.nombre || '';
+  categoria = data?.categoriaPorId || null;
+  masVendidos = (data?.masVendidos || []).map((p) => p.id);
 } catch (e) {
   error = true;
 }
+
+const nombre = categoria?.nombre || 'Categoria';
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{nombreCategoria || 'Categoria'} — Elixir</title>
-  </head>
-  <body>
-    <TopBar />
-    <a href="/tienda" style="display: inline-block; margin: 1rem;">Volver</a>
-
-    <h2 style="padding: 0 1rem;">{nombreCategoria}</h2>
+<Base titulo={nombre}>
+  <div class="contenedor pagina">
+    <nav class="migas" aria-label="Ruta">
+      <ol>
+        <li><a href="/tienda">Inicio</a></li>
+        <li aria-current="page">{nombre}</li>
+      </ol>
+    </nav>
+    <div class="encabezado-pagina">
+      <h1>{nombre}</h1>
+    </div>
 
     {error && (
-      <div style="padding: 1rem; color: #b00020;">
-        <p>Ocurrio un error al cargar los productos de esta categoria. Intentando de nuevo...</p>
+      <div class="alerta alerta-aviso" role="status" style="margin-bottom: 16px;">
+        No pudimos cargar los productos desde el servidor. Lo estamos intentando de nuevo...
       </div>
     )}
 
-    <CatalogoVivo client:load productos={productos} categoriaId={id} recargarAlMontar={error} />
-  </body>
-</html>
+    {!error && !categoria ? (
+      <div class="vacio">
+        <h2>Esta categoria no existe</h2>
+        <p>Puede que se haya eliminado o que el enlace este mal escrito.</p>
+        <a class="btn btn-neutro" href="/tienda">Ir a la tienda</a>
+      </div>
+    ) : (
+      <CatalogoVivo
+        client:load
+        productos={productos}
+        categoriaId={id}
+        categorias={categoria ? [categoria] : []}
+        recargarAlMontar={error}
+        masVendidos={masVendidos}
+      />
+    )}
+  </div>
+</Base>

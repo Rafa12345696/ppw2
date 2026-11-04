@@ -13,17 +13,21 @@ enum Rol {
 }
 
 model Usuario {
-  id             String               @id @default(auto()) @map("_id") @db.ObjectId
-  nombre         String
-  email          String               @unique
-  password       String?
-  rol            Rol                  @default(CLIENTE)
-  activo         Boolean?             @default(true)
-  refreshTokens  RefreshToken[]
-  passwordResets PasswordResetToken[]
-  pedidos        Pedido[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  id              String               @id @default(auto()) @map("_id") @db.ObjectId
+  nombre          String
+  email           String               @unique
+  password        String?
+  rol             Rol                  @default(CLIENTE)
+  activo          Boolean?             @default(true)
+  // Opcional: las cuentas viejas o creadas por el admin la confirman en el checkout
+  fechaNacimiento DateTime?
+  // Opcional, formato +52XXXXXXXXXX: para avisos de pedido por WhatsApp
+  telefono        String?
+  refreshTokens   RefreshToken[]
+  passwordResets  PasswordResetToken[]
+  pedidos         Pedido[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 }
 
 model RefreshToken {
@@ -59,6 +63,9 @@ model Producto {
   stock       Int
   descripcion String
   imagen      String
+  // Opcionales: si precioAntes es mayor que precio, el producto esta en promocion
+  precioAntes Float?
+  premium     Boolean?  @default(false)
   categoriaId String    @db.ObjectId
   categoria   Categoria @relation(fields: [categoriaId], references: [id])
 }
@@ -71,19 +78,21 @@ type ItemPedido {
 }
 
 model Pedido {
-  id         String       @id @default(auto()) @map("_id") @db.ObjectId
-  fecha      DateTime     @default(now())
-  estado     String       @default("PENDIENTE_PAGO")
-  total      Float
-  metodoPago String?
-  expiraEn   DateTime?
-  pagadoEn   DateTime?
+  id                 String       @id @default(auto()) @map("_id") @db.ObjectId
+  fecha              DateTime     @default(now())
+  estado             String       @default("PENDIENTE_PAGO")
+  total              Float
+  metodoPago         String?
+  expiraEn           DateTime?
+  pagadoEn           DateTime?
   envio              String?
   envioActualizadoEn DateTime?
-  usuarioId  String       @db.ObjectId
-  usuario    Usuario      @relation(fields: [usuarioId], references: [id])
-  detalles   ItemPedido[]
-  pagos      Pago[]
+  // Ultimo aviso (correo/WhatsApp) enviado al cliente: evita mandar el mismo aviso dos veces
+  avisoEnviado       String?
+  usuarioId          String       @db.ObjectId
+  usuario            Usuario      @relation(fields: [usuarioId], references: [id])
+  detalles           ItemPedido[]
+  pagos              Pago[]
 }
 
 model Pago {

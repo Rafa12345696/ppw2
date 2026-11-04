@@ -14,6 +14,8 @@ import { EstadisticasModule } from './estadisticas/estadisticas.module.js';
 import { EventosModule } from './eventos/eventos.module.js';
 import { BackofficeModule } from './backoffice/backoffice.module.js';
 import { ImagenesModule } from './imagenes/imagenes.module.js';
+import { BitacoraModule } from './bitacora/bitacora.module.js';
+import { McpModule } from './mcp/mcp.module.js';
 import { HealthController } from './health.controller.js';
 import { JWT_SECRET } from './auth/auth.constants.js';
 
@@ -61,6 +63,8 @@ const jwtWs = new JwtService({ secret: JWT_SECRET });
     EstadisticasModule,
     BackofficeModule,
     ImagenesModule,
+    BitacoraModule,
+    McpModule,
   ],
 })
 export class AppModule {}

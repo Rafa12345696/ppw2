@@ -33,6 +33,14 @@ export class ProductosResolver {
     return this.productosService.findOne(id);
   }
 
+  // Publica: alimenta el apartado "Mas vendidos" del catalogo
+  @Query(() => [Producto])
+  masVendidos(
+    @Args('limite', { type: () => Int, nullable: true, defaultValue: 8 }) limite: number,
+  ) {
+    return this.productosService.masVendidos(limite);
+  }
+
   @Query(() => [Producto])
   productosPorCategoria(@Args('categoriaId', { type: () => ID }) categoriaId: string) {
     return this.productosService.findByCategoria(categoriaId);

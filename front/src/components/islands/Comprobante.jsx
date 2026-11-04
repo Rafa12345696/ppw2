@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
+import { dinero, fechaHora, folio as folioDe, METODOS } from '../../formato';
 
 const QUERY = `
   query($id: ID!) {
@@ -17,11 +18,6 @@ const QUERY = `
     }
   }
 `;
-
-const dinero = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
-const METODOS = { MERCADOPAGO: 'Mercado Pago', PAYPAL: 'PayPal' };
-
-const celda = { padding: '0.4rem', borderBottom: '1px solid #ddd', textAlign: 'left' };
 
 export default function Comprobante() {
   const usuario = useStore((state) => state.usuario);
@@ -60,69 +56,90 @@ export default function Comprobante() {
     };
   }, [hidratado, usuario, id]);
 
-  if (error) return <p style={{ color: '#b00020' }}>{error}</p>;
-  if (!pedido) return <p>Cargando comprobante...</p>;
+  if (error) return <div className="alerta alerta-error" role="alert">{error}</div>;
+  if (!pedido) return <div className="esqueleto" style={{ height: 420, maxWidth: 760 }} aria-label="Cargando comprobante" />;
 
   if (pedido.estado !== 'PAGADO') {
     return (
-      <div>
-        <p>El comprobante solo esta disponible para pedidos pagados.</p>
-        <a href="/mis-pedidos">Volver a Mis pedidos</a>
+      <div className="vacio">
+        <h1>Comprobante no disponible</h1>
+        <p>El comprobante solo existe para pedidos pagados.</p>
+        <a className="btn btn-neutro" href="/mis-pedidos">Volver a Mis pedidos</a>
       </div>
     );
   }
 
   const pago = pedido.pagos.find((g) => g.estado === 'APROBADO');
-  const folio = `ELX-${pedido.id.slice(-8).toUpperCase()}`;
 
   return (
-    <div>
-      <button className="no-imprimir" onClick={() => window.print()} style={{ marginBottom: '1rem' }}>
-        Imprimir o guardar como PDF
-      </button>
+    <div className="pila" style={{ maxWidth: 760 }}>
+      <div className="fila-entre no-imprimir">
+        <a href="/mis-pedidos">← Mis pedidos</a>
+        <button type="button" className="btn btn-neutro" onClick={() => window.print()}>
+          Imprimir o guardar como PDF
+        </button>
+      </div>
 
-      <div style={{ maxWidth: 720, background: 'white', color: '#1a1a1a', padding: '2rem', border: '1px solid #ccc' }}>
-        <h2 style={{ marginBottom: '0.25rem' }}>Elixir</h2>
-        <h3 style={{ marginBottom: '1rem' }}>Comprobante de compra</h3>
+      <article className="documento pila-lg" aria-labelledby="doc-titulo">
+        <header className="fila-entre" style={{ alignItems: 'flex-start' }}>
+          <div className="pila-sm" style={{ gap: 2 }}>
+            <span className="logo">elixir</span>
+            <span className="texto-3">Tienda en linea de licores</span>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <h1 id="doc-titulo" style={{ fontSize: 'var(--t-lg)' }}>Comprobante de compra</h1>
+            <p className="mono">{folioDe(pedido.id)}</p>
+          </div>
+        </header>
 
-        <p><strong>Folio:</strong> {folio}</p>
-        <p><strong>Fecha de pago:</strong> {new Date(pedido.pagadoEn || pedido.fecha).toLocaleString('es-MX')}</p>
-        <p><strong>Cliente:</strong> {pedido.usuario?.nombre} ({pedido.usuario?.email})</p>
-        <p style={{ marginBottom: '1rem' }}>
-          <strong>Metodo de pago:</strong> {METODOS[pedido.metodoPago] || '—'}
-          {pago?.pagoIdExterno && ` (ref. ${pago.pagoIdExterno})`}
-        </p>
+        <dl>
+          <dt>Fecha de pago</dt>
+          <dd>{fechaHora(pedido.pagadoEn || pedido.fecha)}</dd>
+          <dt>Cliente</dt>
+          <dd>{pedido.usuario?.nombre} · {pedido.usuario?.email}</dd>
+          <dt>Metodo de pago</dt>
+          <dd>
+            {METODOS[pedido.metodoPago] || '—'}
+            {pago?.pagoIdExterno && <span className="texto-3"> (ref. <span className="mono">{pago.pagoIdExterno}</span>)</span>}
+          </dd>
+        </dl>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1rem' }}>
-          <thead>
-            <tr>
-              <th style={celda}>Producto</th>
-              <th style={celda}>Cant.</th>
-              <th style={celda}>Precio</th>
-              <th style={celda}>Importe</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pedido.detalles.map((d, i) => (
-              <tr key={i}>
-                <td style={celda}>{d.nombre}</td>
-                <td style={celda}>{d.cantidad}</td>
-                <td style={celda}>{dinero.format(d.precioUnit)}</td>
-                <td style={celda}>{dinero.format(d.precioUnit * d.cantidad)}</td>
+        <div className="tabla-envoltura">
+          <table className="tabla">
+            <caption className="sr-only">Productos del pedido</caption>
+            <thead>
+              <tr>
+                <th scope="col">Producto</th>
+                <th scope="col" className="derecha">Cant.</th>
+                <th scope="col" className="derecha">Precio</th>
+                <th scope="col" className="derecha">Importe</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {pedido.detalles.map((d, i) => (
+                <tr key={i}>
+                  <td>{d.nombre}</td>
+                  <td className="derecha num">{d.cantidad}</td>
+                  <td className="derecha num">{dinero.format(d.precioUnit)}</td>
+                  <td className="derecha num">{dinero.format(d.precioUnit * d.cantidad)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        <p style={{ fontSize: '1.2rem' }}><strong>Total: {dinero.format(pedido.total)}</strong></p>
+        <div className="fila-entre" style={{ borderTop: '2px solid var(--c-texto)', paddingTop: 12 }}>
+          <strong>Total pagado</strong>
+          <strong className="precio num" style={{ margin: 0 }}>{dinero.format(pedido.total)}</strong>
+        </div>
         {pago && pago.moneda !== 'MXN' && (
-          <p>Monto cobrado por el proveedor: {pago.monto} {pago.moneda}</p>
+          <p className="texto-3">Monto cobrado por el proveedor: {pago.monto} {pago.moneda}</p>
         )}
 
-        <p style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: '#555' }}>
+        <p className="texto-3">
           Este documento es un comprobante de compra y no tiene validez como factura fiscal (CFDI).
         </p>
-      </div>
+      </article>
     </div>
   );
 }

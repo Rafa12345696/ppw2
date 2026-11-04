@@ -37,4 +37,24 @@ export class UsuariosResolver {
   ) {
     return this.usuariosService.cambiarEstado(id, activo, admin.userId);
   }
+
+  // El usuario con sesion confirma su propia fecha (formato AAAA-MM-DD)
+  @Mutation(() => Usuario)
+  @UseGuards(GqlAuthGuard)
+  confirmarFechaNacimiento(
+    @Args('fecha') fecha: string,
+    @CurrentUser() user: UserAuthContext,
+  ) {
+    return this.usuariosService.confirmarFechaNacimiento(user.userId, fecha);
+  }
+
+  // El usuario con sesion pone o quita su telefono para avisos por WhatsApp
+  @Mutation(() => Usuario)
+  @UseGuards(GqlAuthGuard)
+  actualizarTelefono(
+    @Args('telefono', { type: () => String, nullable: true }) telefono: string | null,
+    @CurrentUser() user: UserAuthContext,
+  ) {
+    return this.usuariosService.actualizarTelefono(user.userId, telefono);
+  }
 }

@@ -1,23 +1,17 @@
 ---
 export const prerender = true;
-import TopBar from '../../components/TopBar.astro';
-import AdminNav from '../../components/AdminNav.astro';
+import Base from '../../layouts/Base.astro';
 import AdminProductos from '../../components/islands/AdminProductos.jsx';
-import '../../index.css';
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Productos — Admin Elixir</title>
-  </head>
-  <body>
-    <TopBar />
-    <AdminNav />
-    <div style="padding: 1.5rem;">
-      <h2>Productos</h2>
-      <AdminProductos client:load />
+<Base titulo="Productos - Admin" admin>
+  <div class="contenedor pagina">
+    <div class="encabezado-pagina">
+      <div>
+        <h1>Productos</h1>
+        <p>Catalogo, precios, promociones e inventario.</p>
+      </div>
     </div>
-  </body>
-</html>
+    <AdminProductos client:load />
+  </div>
+</Base>

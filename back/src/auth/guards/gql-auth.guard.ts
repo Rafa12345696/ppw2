@@ -5,7 +5,7 @@ import { JWT_SECRET } from '../auth.constants.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { JwtPayload } from '../types/auth.types.js';
 
-const OBJECT_ID = /^[a-f\d]{24}$/i;
+import { OBJECT_ID } from '../../comun/object-id.js';
 
 @Injectable()
 export class GqlAuthGuard implements CanActivate {

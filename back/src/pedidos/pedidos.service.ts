@@ -12,8 +12,8 @@ import { ItemPedidoInput } from './dto/item-pedido.input.js';
 import { ESTADO_PEDIDO, MINUTOS_RESERVA } from './pedido.constants.js';
 import { Rol } from '../usuarios/usuarios.model.js';
 import type { UserAuthContext } from '../auth/types/auth.types.js';
-
-const OBJECT_ID = /^[a-f\d]{24}$/i;
+import { OBJECT_ID } from '../comun/object-id.js';
+import { esMayorDeEdad } from '../comun/edad.js';
 
 // Un pedido pagado solo avanza un paso a la vez
 const SIGUIENTE_ENVIO: Record<string, string> = {
@@ -37,7 +37,7 @@ export class PedidosService implements OnModuleInit, OnModuleDestroy {
       this.expirarVencidos().catch((e: Error) =>
         this.logger.error(`No se pudieron expirar pedidos: ${e.message}`),
       );
-    barrer();
+    void barrer();
     this.timer = setInterval(barrer, 60_000);
   }
 
@@ -66,10 +66,26 @@ export class PedidosService implements OnModuleInit, OnModuleDestroy {
     return pedido;
   }
 
+  // Regla de negocio: solo mayores de 18 pueden comprar. La fecha la declara el cliente al registrarse o en el checkout.
+  private async verificarEdad(usuarioId: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: usuarioId },
+      select: { fechaNacimiento: true },
+    });
+    if (!usuario?.fechaNacimiento) {
+      throw new BadRequestException('Confirma tu fecha de nacimiento para poder comprar');
+    }
+    if (!esMayorDeEdad(usuario.fechaNacimiento)) {
+      throw new BadRequestException('Solo mayores de 18 años pueden comprar en Elixir');
+    }
+  }
+
   async crearPedido(items: ItemPedidoInput[], usuarioId: string) {
     if (items.length === 0) {
       throw new BadRequestException('El pedido no tiene productos');
     }
+
+    await this.verificarEdad(usuarioId);
 
     // Libera primero el stock de pedidos vencidos
     await this.expirarVencidos();

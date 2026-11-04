@@ -1,8 +1,8 @@
 ---
-import TopBar from '../../components/TopBar.astro';
+// Sin prerender: el producto se pide en cada visita
+import Base from '../../layouts/Base.astro';
 import ProductoVivo from '../../components/islands/ProductoVivo.jsx';
 import { graphqlFetchSSR } from '../../api.js';
-import '../../index.css';
 
 const { id } = Astro.params;
 
@@ -12,10 +12,13 @@ const QUERY = `
       id
       nombre
       precio
+      precioAntes
+      premium
       stock
       descripcion
       imagen
       categoriaId
+      categoria { id nombre }
     }
   }
 `;
@@ -31,26 +34,28 @@ try {
 }
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{producto?.nombre || 'Producto'} — Elixir</title>
-  </head>
-  <body>
-    <TopBar />
-    <a href="/tienda" style="display: inline-block; margin: 1rem;">Volver</a>
+<Base titulo={producto?.nombre || 'Producto'} descripcion={producto?.descripcion}>
+  <div class="contenedor pagina">
+    <nav class="migas" aria-label="Ruta">
+      <ol>
+        <li><a href="/tienda">Inicio</a></li>
+        {producto?.categoria && <li><a href={`/categoria/${producto.categoria.id}`}>{producto.categoria.nombre}</a></li>}
+        <li aria-current="page">{producto?.nombre || 'Producto'}</li>
+      </ol>
+    </nav>
 
     {error && (
-      <div style="padding: 1rem; color: #b00020;">
-        <p>Ocurrio un error al cargar este producto.</p>
-      </div>
+      <div class="alerta alerta-error" role="alert">Ocurrio un error al cargar este producto. Intenta recargar la pagina.</div>
     )}
 
     {!error && !producto && (
-      <p style="padding: 1rem;">Producto no encontrado.</p>
+      <div class="vacio">
+        <h1>Producto no encontrado</h1>
+        <p>Puede que ya no este a la venta.</p>
+        <a class="btn btn-neutro" href="/tienda">Ver el catalogo</a>
+      </div>
     )}
 
     {!error && producto && <ProductoVivo client:load producto={producto} />}
-  </body>
-</html>
+  </div>
+</Base>

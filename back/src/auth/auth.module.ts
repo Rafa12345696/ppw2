@@ -1,24 +1,22 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service.js';
 import { AuthResolver } from './auth.resolver.js';
-import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { UsuariosModule } from '../usuarios/usuarios.module.js';
 import { MailModule } from '../mail/mail.module.js';
 import { JWT_SECRET } from './auth.constants.js';
 
+// La verificacion del token la hace GqlAuthGuard (sin Passport). Aqui solo se configura la firma del login.
 @Module({
   imports: [
     UsuariosModule,
     MailModule,
-    PassportModule,
     JwtModule.register({
       secret: JWT_SECRET,
       signOptions: { expiresIn: '1d' },
     }),
   ],
-  providers: [AuthService, AuthResolver, JwtStrategy],
-  exports: [JwtModule, PassportModule],
+  providers: [AuthService, AuthResolver],
+  exports: [JwtModule],
 })
 export class AuthModule {}

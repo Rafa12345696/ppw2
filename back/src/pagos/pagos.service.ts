@@ -13,7 +13,7 @@ import { ESTADO_PEDIDO, MINUTOS_RESERVA } from '../pedidos/pedido.constants.js';
 import { Rol } from '../usuarios/usuarios.model.js';
 import type { UserAuthContext } from '../auth/types/auth.types.js';
 
-const OBJECT_ID = /^[a-f\d]{24}$/i;
+import { OBJECT_ID } from '../comun/object-id.js';
 const PROVEEDORES = ['MERCADOPAGO', 'PAYPAL'] as const;
 type Proveedor = (typeof PROVEEDORES)[number];
 type Cabeceras = Record<string, string | undefined>;

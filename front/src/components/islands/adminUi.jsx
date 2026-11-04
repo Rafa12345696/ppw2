@@ -3,17 +3,8 @@ import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
 import { suscribirse } from '../../ws';
 
-export const dinero = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
-export const fechaHora = (f) => (f ? new Date(f).toLocaleString('es-MX') : '—');
-export const folio = (id) => `ELX-${id.slice(-8).toUpperCase()}`;
-
-export const estilos = {
-  barra: { display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '1rem' },
-  campo: { display: 'flex', flexDirection: 'column', fontSize: '0.85rem', gap: 2 },
-  tabla: { width: '100%', borderCollapse: 'collapse' },
-  encabezado: { textAlign: 'left', borderBottom: '2px solid #ccc' },
-  fila: { borderBottom: '1px solid #eee' },
-};
+// Formatos compartidos (se reexportan para no cambiar los imports de las pantallas)
+export { dinero, fechaHora, folio } from '../../formato';
 
 // Maneja busqueda (con pausa al escribir), filtros, pagina y recarga de una tabla del servidor
 export function useListado({ query, campo, inicial, porPagina = 10, enVivo = false }) {
@@ -52,11 +43,11 @@ export function useListado({ query, campo, inicial, porPagina = 10, enVivo = fal
         setCargando(false);
       })
       .catch((e) => {
-  if (cancelado) return;
-  console.error('Error al cargar listado:', campo, e);
-  setError(e.message || 'No se pudo cargar la informacion');
-  setCargando(false);
-});
+        if (cancelado) return;
+        console.error('Error al cargar listado:', campo, e);
+        setError(e.message || 'No se pudo cargar la informacion');
+        setCargando(false);
+      });
     return () => {
       cancelado = true;
     };
@@ -95,38 +86,55 @@ export function useListado({ query, campo, inicial, porPagina = 10, enVivo = fal
   return { datos, cargando, error, filtros, cambiarFiltro, escrito, setEscrito, buscar, pagina, setPagina, limpiar, recargar };
 }
 
+// El <label> envuelve al control: asi quedan ligados sin necesidad de ids
 export function Campo({ etiqueta, children }) {
   return (
-    <div style={estilos.campo}>
-      <label>{etiqueta}</label>
+    <label className="campo-compacto">
+      {etiqueta}
       {children}
-    </div>
+    </label>
   );
 }
 
 export function BarraFiltros({ escrito, setEscrito, placeholder, limpiar, children }) {
   return (
-    <div style={estilos.barra}>
+    <div className="barra-filtros" role="search">
       <Campo etiqueta="Buscar">
-        <input
-          value={escrito}
-          onChange={(e) => setEscrito(e.target.value)}
-          placeholder={placeholder}
-          style={{ minWidth: 240 }}
-        />
+        <input type="search" value={escrito} onChange={(e) => setEscrito(e.target.value)} placeholder={placeholder} style={{ minWidth: 240 }} />
       </Campo>
       {children}
-      <button type="button" onClick={limpiar}>Limpiar filtros</button>
+      <button type="button" className="btn btn-fantasma btn-sm" onClick={limpiar}>Limpiar filtros</button>
     </div>
   );
 }
 
 export function Paginador({ pagina, paginas, total, onCambiar }) {
   return (
-    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap' }}>
-      <button disabled={pagina <= 1} onClick={() => onCambiar(pagina - 1)}>Anterior</button>
-      <span>Pagina {pagina} de {paginas} ({total} resultados)</span>
-      <button disabled={pagina >= paginas} onClick={() => onCambiar(pagina + 1)}>Siguiente</button>
+    <nav className="paginador" aria-label="Paginas">
+      <span className="num">{total} {total === 1 ? 'resultado' : 'resultados'}</span>
+      <div className="acciones">
+        <button type="button" className="btn btn-neutro btn-sm" disabled={pagina <= 1} onClick={() => onCambiar(pagina - 1)}>Anterior</button>
+        <span className="num" aria-current="page">Pagina {pagina} de {paginas}</span>
+        <button type="button" className="btn btn-neutro btn-sm" disabled={pagina >= paginas} onClick={() => onCambiar(pagina + 1)}>Siguiente</button>
+      </div>
+    </nav>
+  );
+}
+
+// Estados comunes de una tabla: error, cargando y vacio
+export function EstadoListado({ L, vacio }) {
+  if (L.error) return <div className="alerta alerta-error" role="alert">{L.error}</div>;
+  if (!L.datos) return <div className="esqueleto" style={{ height: 220 }} aria-label="Cargando" />;
+  if (L.datos.items.length === 0) return <div className="vacio"><p>{vacio}</p></div>;
+  return null;
+}
+
+// Mensaje de exito o error tras una accion
+export function Mensaje({ tipo = 'error', children }) {
+  if (!children) return null;
+  return (
+    <div className={`alerta alerta-${tipo === 'ok' ? 'ok' : 'error'}`} role={tipo === 'ok' ? 'status' : 'alert'} style={{ marginBottom: 16 }}>
+      {children}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { graphqlRequest } from '../../api';
 import PasswordInput from './PasswordInput';
+import { IcoAlerta, IcoCheck } from './Iconos';
 
 const MUTATION = `
   mutation($token: String!, $password: String!) {
@@ -45,42 +46,49 @@ export default function RestablecerPasswordForm() {
     setEnviando(false);
   };
 
-  if (token === null) return <p>Cargando...</p>;
+  if (token === null) return <div className="esqueleto" style={{ height: 180 }} aria-hidden="true" />;
 
   if (token === '') {
     return (
-      <div>
-        <p>El enlace no es valido.</p>
-        <a href="/olvide-password">Solicitar uno nuevo</a>
+      <div className="pila">
+        <div className="alerta alerta-error" role="alert">
+          <IcoAlerta /> <span>El enlace no es valido o esta incompleto.</span>
+        </div>
+        <a className="btn btn-neutro btn-bloque" href="/olvide-password">Solicitar un enlace nuevo</a>
       </div>
     );
   }
 
   if (listo) {
     return (
-      <div>
-        <p>Tu contraseña se actualizo correctamente.</p>
-        <a href="/login"><button style={{ marginTop: '1rem' }}>Iniciar sesion</button></a>
+      <div className="pila">
+        <div className="alerta alerta-ok" role="status">
+          <IcoCheck /> <span>Tu contraseña se actualizo correctamente.</span>
+        </div>
+        <a className="btn btn-primario btn-bloque btn-lg" href="/login">Iniciar sesion</a>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 300 }}>
-      <div style={{ marginBottom: '1rem' }}>
-        <label>Contraseña nueva (minimo 6 caracteres)</label><br />
-        <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} />
+    <form onSubmit={handleSubmit} className="pila">
+      <div className="campo">
+        <label htmlFor="nueva-password">Contraseña nueva</label>
+        <PasswordInput id="nueva-password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} autoComplete="new-password" />
       </div>
-      <div style={{ marginBottom: '1rem' }}>
-        <label>Confirmar contraseña</label><br />
-        <PasswordInput value={confirmar} onChange={(e) => setConfirmar(e.target.value)} minLength={6} />
+      <div className="campo">
+        <label htmlFor="nueva-confirmar">Confirmar contraseña</label>
+        <PasswordInput id="nueva-confirmar" value={confirmar} onChange={(e) => setConfirmar(e.target.value)} minLength={6} autoComplete="new-password" />
       </div>
       {error && (
-        <p style={{ color: '#b00020' }}>
-          {error} {error.includes('enlace') && <a href="/olvide-password">Solicitar uno nuevo</a>}
-        </p>
+        <div className="alerta alerta-error" role="alert">
+          <IcoAlerta />
+          <span>
+            {error} {error.includes('enlace') && <a href="/olvide-password">Solicitar uno nuevo</a>}
+          </span>
+        </div>
       )}
-      <button type="submit" disabled={enviando}>
+      <button type="submit" className="btn btn-primario btn-bloque btn-lg" disabled={enviando} aria-busy={enviando}>
         {enviando ? 'Guardando...' : 'Cambiar contraseña'}
       </button>
     </form>

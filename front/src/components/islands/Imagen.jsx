@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { propsImagen } from '../../imagenes';
+import { IcoBotella } from './Iconos';
 
 export default function Imagen({ url, alt, sizes = '100vw', anchos, prioridad = false }) {
   const [fallo, setFallo] = useState(false);
 
   if (!url || fallo) {
     return (
-      <div style={{ color: '#888', fontSize: '0.85rem', padding: '1rem', textAlign: 'center' }}>
-        Sin imagen
+      <div className="sin-imagen" role="img" aria-label={alt ? `${alt}: sin imagen` : 'Sin imagen'}>
+        <IcoBotella tam={40} />
+        <span aria-hidden="true">Sin imagen</span>
       </div>
     );
   }
@@ -19,7 +21,6 @@ export default function Imagen({ url, alt, sizes = '100vw', anchos, prioridad = 
       loading={prioridad ? 'eager' : 'lazy'}
       decoding="async"
       onError={() => setFallo(true)}
-      style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
     />
   );
 }

@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
 import { suscribirse } from '../../ws';
+import { dinero, fechaHora, METODOS, PASOS_ENVIO, ENVIOS } from '../../formato';
 import BotonesPago from './BotonesPago';
+import { EstadoPedido } from './Estado';
+import { IcoBolsa } from './Iconos';
 
 const CAMPOS = 'id fecha estado envio total metodoPago detalles { nombre cantidad }';
 
@@ -26,19 +29,29 @@ const CONFIRMAR = `
   }
 `;
 
-const ETIQUETAS = {
-  PENDIENTE_PAGO: 'Pendiente de pago',
-  PAGADO: 'Pagado',
-  CANCELADO: 'Cancelado',
-  EXPIRADO: 'Expirado',
-};
+// Barra de 4 pasos del envio; el paso actual se anuncia con aria-current
+function Seguimiento({ envio }) {
+  const actual = PASOS_ENVIO.indexOf(envio || 'POR_PREPARAR');
+  return (
+    <ol className="pasos" aria-label="Seguimiento del envio">
+      {PASOS_ENVIO.map((paso, i) => (
+        <li key={paso} className="paso" data-hecho={i <= actual} aria-current={i === actual ? 'step' : undefined}>
+          {ENVIOS[paso].texto}
+        </li>
+      ))}
+    </ol>
+  );
+}
 
-const ENVIOS = {
-  POR_PREPARAR: 'Por preparar',
-  PREPARANDO: 'Preparando tu pedido',
-  ENVIADO: 'Enviado',
-  ENTREGADO: 'Entregado',
-};
+function Esqueletos() {
+  return (
+    <div className="pila" aria-hidden="true">
+      {[1, 2].map((i) => (
+        <div key={i} className="esqueleto" style={{ height: 150 }} />
+      ))}
+    </div>
+  );
+}
 
 export default function MisPedidos() {
   const token = useStore((state) => state.token);
@@ -101,54 +114,59 @@ export default function MisPedidos() {
     return parar;
   }, [hidratado, usuario, token]);
 
-  if (error) return <p style={{ color: '#b00020' }}>{error}</p>;
-  if (!pedidos) return <p>Cargando tus pedidos...</p>;
-  if (pedidos.length === 0) return <p>Todavia no tienes pedidos.</p>;
+  if (error) return <div className="alerta alerta-error" role="alert">{error}</div>;
+  if (!pedidos) return <Esqueletos />;
+
+  if (pedidos.length === 0) {
+    return (
+      <div className="vacio">
+        <IcoBolsa tam={32} />
+        <h2>Todavia no tienes pedidos</h2>
+        <p>Cuando compres algo, aqui veras su pago y su envio en tiempo real.</p>
+        <a className="btn btn-primario" href="/tienda">Ir a la tienda</a>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: 700 }}>
-      <p style={{ marginBottom: '1rem', fontSize: '0.85rem' }}>
-        <span
-          style={{
-            display: 'inline-block',
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            background: enVivo ? '#2e7d32' : '#999',
-            marginRight: 6,
-          }}
-        />
+    <div className="pila">
+      <span className="en-vivo" data-activo={enVivo}>
+        <span className="punto" aria-hidden="true" />
         {enVivo ? 'Se actualiza en vivo' : 'Sin conexion en vivo'}
-      </p>
+      </span>
 
-      {pedidos.map((p) => (
-        <div key={p.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <strong>Pedido {p.id.slice(-6)}</strong>
-            <span>{new Date(p.fecha).toLocaleString('es-MX')}</span>
-          </div>
-          <p>{p.detalles.map((d) => `${d.nombre} x${d.cantidad}`).join(', ')}</p>
-          <p>
-            Total: ${p.total} — <strong>{ETIQUETAS[p.estado] || p.estado}</strong>
-            {p.metodoPago && ` (${p.metodoPago === 'PAYPAL' ? 'PayPal' : 'Mercado Pago'})`}
-          </p>
-          {p.estado === 'PAGADO' && (
-            <p>
-              Envio: <strong>{ENVIOS[p.envio || 'POR_PREPARAR']}</strong>
-            </p>
-          )}
-          {p.estado === 'PAGADO' && (
-            <p style={{ marginTop: '0.5rem' }}>
-              <a href={`/comprobante?pedido=${p.id}`}>Ver comprobante</a>
-            </p>
-          )}
-          {p.estado === 'PENDIENTE_PAGO' && (
-            <div style={{ marginTop: '0.5rem' }}>
-              <BotonesPago pedidoId={p.id} />
+      <ul className="pila" style={{ listStyle: 'none' }}>
+        {pedidos.map((p) => (
+          <li key={p.id} className="tarjeta pila">
+            <div className="fila-entre">
+              <div className="pila-sm" style={{ gap: 2 }}>
+                <h2 style={{ fontSize: 'var(--t-md)' }}>
+                  Pedido <span className="mono">{p.id.slice(-6).toUpperCase()}</span>
+                </h2>
+                <span className="texto-3">{fechaHora(p.fecha)}</span>
+              </div>
+              <EstadoPedido estado={p.estado} />
             </div>
-          )}
-        </div>
-      ))}
+
+            <p className="texto-2">{p.detalles.map((d) => `${d.nombre} × ${d.cantidad}`).join(' · ')}</p>
+
+            {p.estado === 'PAGADO' && <Seguimiento envio={p.envio} />}
+
+            <div className="fila-entre" style={{ borderTop: '1px solid var(--c-borde)', paddingTop: 12 }}>
+              <span>
+                <strong className="num">{dinero.format(p.total)}</strong>
+                {p.metodoPago && <span className="texto-3"> · {METODOS[p.metodoPago] || p.metodoPago}</span>}
+              </span>
+              <div className="acciones">
+                {p.estado === 'PAGADO' && (
+                  <a className="btn btn-neutro btn-sm" href={`/comprobante?pedido=${p.id}`}>Ver comprobante</a>
+                )}
+                {p.estado === 'PENDIENTE_PAGO' && <BotonesPago pedidoId={p.id} secundario />}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

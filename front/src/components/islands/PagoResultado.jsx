@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
 import { suscribirse } from '../../ws';
+import { dinero, METODOS, ESTADOS_PEDIDO } from '../../formato';
 import BotonesPago from './BotonesPago';
+import { IcoCheck, IcoReloj, IcoAlerta } from './Iconos';
 
 const CONFIRMAR = `
   mutation($pedidoId: ID!) {
@@ -27,6 +29,20 @@ const SUB = `
 `;
 
 const MAX_REVISIONES = 8;
+
+// Circulo con icono para el estado del pago
+function Sello({ tono, children }) {
+  const colores = {
+    ok: ['var(--c-ok-fondo)', 'var(--c-ok)'],
+    aviso: ['var(--c-aviso-fondo)', 'var(--c-aviso)'],
+    neutra: ['var(--c-fondo-3)', 'var(--c-texto-2)'],
+  }[tono];
+  return (
+    <span aria-hidden="true" style={{ width: 56, height: 56, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: colores[0], color: colores[1] }}>
+      {children}
+    </span>
+  );
+}
 
 export default function PagoResultado() {
   const usuario = useStore((state) => state.usuario);
@@ -99,44 +115,68 @@ export default function PagoResultado() {
     };
   }, [hidratado, usuario, pedidoId]);
 
-  if (pedidoId === '') return <p>Falta el numero de pedido.</p>;
-  if (error) return <p style={{ color: '#b00020' }}>{error}</p>;
-  if (!pedido) return <p>Verificando tu pago...</p>;
+  if (pedidoId === '') return <div className="alerta alerta-error" role="alert">Falta el numero de pedido.</div>;
+  if (error) return <div className="alerta alerta-error" role="alert"><IcoAlerta /> <span>{error}</span></div>;
+  if (!pedido) {
+    return (
+      <div className="tarjeta pila" style={{ alignItems: 'center', textAlign: 'center' }} role="status">
+        <Sello tono="neutra"><IcoReloj tam={26} /></Sello>
+        <h1>Verificando tu pago...</h1>
+      </div>
+    );
+  }
+
+  const folio = <span className="mono">{pedido.id.slice(-6).toUpperCase()}</span>;
 
   if (pedido.estado === 'PAGADO') {
     return (
-      <div>
-        <h2>Pago confirmado</h2>
-        <p>Pedido {pedido.id}</p>
-        <p>Total pagado: ${pedido.total}</p>
-        <p style={{ marginTop: '1rem' }}>
-          <a href="/mis-pedidos"><button>Ver mis pedidos</button></a>
-        </p>
+      <div className="tarjeta pila-lg" style={{ alignItems: 'center', textAlign: 'center' }} role="status">
+        <Sello tono="ok"><IcoCheck tam={28} /></Sello>
+        <div className="pila-sm">
+          <h1>¡Pago confirmado!</h1>
+          <p className="texto-2">Pedido {folio}{pedido.metodoPago && ` · ${METODOS[pedido.metodoPago] || pedido.metodoPago}`}</p>
+        </div>
+        <p className="precio precio-grande num">{dinero.format(pedido.total)}</p>
+        <p className="texto-2">Te avisaremos por correo cuando empecemos a prepararlo.</p>
+        <div className="acciones" style={{ justifyContent: 'center' }}>
+          <a className="btn btn-primario" href="/mis-pedidos">Seguir mi pedido</a>
+          <a className="btn btn-neutro" href={`/comprobante?pedido=${pedido.id}`}>Ver comprobante</a>
+        </div>
       </div>
     );
   }
 
   if (pedido.estado === 'PENDIENTE_PAGO') {
     return (
-      <div>
-        <h2>{agotado ? 'Aun no recibimos la confirmacion' : 'Confirmando tu pago...'}</h2>
-        <p>
-          {agotado
-            ? 'Si ya pagaste, puede tardar unos minutos. Esta pagina se actualiza sola cuando se confirme.'
-            : 'No cierres esta pagina: se actualiza sola en cuanto se confirme el pago.'}
-        </p>
-        <p style={{ margin: '1rem 0 0.5rem' }}>¿No terminaste de pagar? Puedes intentarlo de nuevo:</p>
-        <BotonesPago pedidoId={pedido.id} />
-        <p style={{ marginTop: '1rem' }}><a href="/mis-pedidos">Ir a Mis pedidos</a></p>
+      <div className="tarjeta pila-lg" style={{ alignItems: 'center', textAlign: 'center' }} role="status">
+        <Sello tono="aviso"><IcoReloj tam={28} /></Sello>
+        <div className="pila-sm">
+          <h1>{agotado ? 'Aun no recibimos la confirmacion' : 'Confirmando tu pago...'}</h1>
+          <p className="texto-2">
+            {agotado
+              ? 'Si ya pagaste, puede tardar unos minutos. Esta pagina se actualiza sola cuando se confirme.'
+              : 'No cierres esta pagina: se actualiza sola en cuanto se confirme el pago.'}
+          </p>
+        </div>
+        <p className="texto-2">¿No terminaste de pagar? Puedes intentarlo de nuevo.</p>
+        <div className="acciones" style={{ justifyContent: 'center' }}>
+          <BotonesPago pedidoId={pedido.id} />
+          <a className="btn btn-neutro" href="/mis-pedidos">Ir a Mis pedidos</a>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <h2>Este pedido ya no esta activo</h2>
-      <p>El pedido {pedido.id} esta en estado {pedido.estado.toLowerCase()}.</p>
-      <p style={{ marginTop: '1rem' }}><a href="/tienda"><button>Volver a la tienda</button></a></p>
+    <div className="tarjeta pila-lg" style={{ alignItems: 'center', textAlign: 'center' }} role="status">
+      <Sello tono="neutra"><IcoAlerta tam={28} /></Sello>
+      <div className="pila-sm">
+        <h1>Este pedido ya no esta activo</h1>
+        <p className="texto-2">
+          El pedido {folio} esta {(ESTADOS_PEDIDO[pedido.estado]?.texto || pedido.estado).toLowerCase()}.
+        </p>
+      </div>
+      <a className="btn btn-primario" href="/tienda">Volver a la tienda</a>
     </div>
   );
 }

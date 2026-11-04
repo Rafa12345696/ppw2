@@ -25,5 +25,11 @@ export class Usuario {
   activo?: boolean | null;
 
   @Field(() => Date, { nullable: true })
+  fechaNacimiento?: Date | null;
+
+  @Field(() => String, { nullable: true })
+  telefono?: string | null;
+
+  @Field(() => Date, { nullable: true })
   createdAt?: Date | null;
 }

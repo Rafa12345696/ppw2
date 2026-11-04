@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { graphqlRequest } from '../../api';
+import { IcoAlerta, IcoCheck } from './Iconos';
 
 const MUTATION = `
   mutation($email: String!) {
@@ -28,29 +29,34 @@ export default function OlvidePasswordForm() {
 
   if (enviado) {
     return (
-      <div style={{ maxWidth: 360 }}>
-        <p>
-          Si <strong>{email}</strong> esta registrado, te enviamos un enlace para restablecer tu
-          contraseña. Revisa tambien la carpeta de spam. El enlace dura 1 hora.
-        </p>
-        <p style={{ marginTop: '1rem' }}><a href="/login">Volver a iniciar sesion</a></p>
+      <div className="pila">
+        <div className="alerta alerta-ok" role="status">
+          <IcoCheck />
+          <span>
+            Si <strong>{email}</strong> esta registrado, te enviamos un enlace para crear una contraseña nueva.
+          </span>
+        </div>
+        <p className="texto-2">Revisa tambien la carpeta de spam. El enlace dura 1 hora.</p>
+        <a className="btn btn-neutro btn-bloque" href="/login">Volver a iniciar sesion</a>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 300 }}>
-      <p style={{ marginBottom: '1rem' }}>
-        Escribe el correo de tu cuenta y te enviaremos un enlace para crear una contraseña nueva.
-      </p>
-      <div style={{ marginBottom: '1rem' }}>
-        <label>Correo</label><br />
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%' }} />
+    <form onSubmit={handleSubmit} className="pila">
+      <div className="campo">
+        <label htmlFor="olvide-email">Correo de tu cuenta</label>
+        <input id="olvide-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </div>
-      {error && <p style={{ color: '#b00020' }}>{error}</p>}
-      <button type="submit" disabled={enviando}>
+      {error && (
+        <div className="alerta alerta-error" role="alert">
+          <IcoAlerta /> <span>{error}</span>
+        </div>
+      )}
+      <button type="submit" className="btn btn-primario btn-bloque btn-lg" disabled={enviando} aria-busy={enviando}>
         {enviando ? 'Enviando...' : 'Enviar enlace'}
       </button>
+      <a href="/login" className="texto-3" style={{ textAlign: 'center' }}>Volver a iniciar sesion</a>
     </form>
   );
 }

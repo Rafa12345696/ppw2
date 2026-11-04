@@ -1,23 +1,17 @@
 ---
 export const prerender = true;
-import TopBar from '../../components/TopBar.astro';
-import AdminNav from '../../components/AdminNav.astro';
+import Base from '../../layouts/Base.astro';
 import AdminCategorias from '../../components/islands/AdminCategorias.jsx';
-import '../../index.css';
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Categorias - Admin Elixir</title>
-  </head>
-  <body>
-    <TopBar />
-    <AdminNav />
-    <div style="padding: 1.5rem;">
-      <h2>Categorias</h2>
-      <AdminCategorias client:load />
+<Base titulo="Categorias - Admin" admin>
+  <div class="contenedor pagina">
+    <div class="encabezado-pagina">
+      <div>
+        <h1>Categorias</h1>
+        <p>Una categoria solo se puede borrar cuando no tiene productos.</p>
+      </div>
     </div>
-  </body>
-</html>
+    <AdminCategorias client:load />
+  </div>
+</Base>

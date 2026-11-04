@@ -1,4 +1,6 @@
-import { useListado, Paginador, BarraFiltros, Campo, estilos, dinero, fechaHora } from './adminUi';
+import { useListado, Paginador, BarraFiltros, Campo, EstadoListado, dinero, fechaHora } from './adminUi';
+import { METODOS, ESTADOS_PAGO } from '../../formato';
+import { EstadoPago } from './Estado';
 import RequiereAdmin from './RequiereAdmin';
 
 const QUERY = `
@@ -11,9 +13,6 @@ const QUERY = `
     }
   }
 `;
-
-const METODOS = { MERCADOPAGO: 'Mercado Pago', PAYPAL: 'PayPal' };
-const ESTADOS = ['APROBADO', 'PENDIENTE', 'RECHAZADO', 'ERROR', 'MONTO_INVALIDO', 'REQUIERE_REEMBOLSO', 'REEMBOLSADO'];
 
 const INICIAL = { proveedor: null, estado: null, desde: null, hasta: null };
 
@@ -37,7 +36,7 @@ function Lista() {
         <Campo etiqueta="Estado">
           <select value={L.filtros.estado || ''} onChange={(e) => L.cambiarFiltro('estado', e.target.value)}>
             <option value="">Todos</option>
-            {ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
+            {Object.entries(ESTADOS_PAGO).map(([v, t]) => <option key={v} value={v}>{t.texto}</option>)}
           </select>
         </Campo>
         <Campo etiqueta="Desde">
@@ -48,39 +47,37 @@ function Lista() {
         </Campo>
       </BarraFiltros>
 
-      {L.error && <p style={{ color: '#b00020' }}>{L.error}</p>}
-      {!L.datos && !L.error && <p>Cargando pagos...</p>}
+      <EstadoListado L={L} vacio="No hay pagos con esos filtros." />
 
-      {L.datos && (
-        <div style={{ opacity: L.cargando ? 0.6 : 1 }}>
-          {L.datos.items.length === 0 ? (
-            <p>No hay pagos con esos filtros.</p>
-          ) : (
-            <table style={estilos.tabla}>
+      {L.datos && L.datos.items.length > 0 && (
+        <div style={{ opacity: L.cargando ? 0.6 : 1 }} aria-busy={L.cargando}>
+          <div className="tabla-envoltura">
+            <table className="tabla">
+              <caption className="sr-only">Pagos</caption>
               <thead>
-                <tr style={estilos.encabezado}>
-                  <th>Fecha</th>
-                  <th>Proveedor</th>
-                  <th>Pedido</th>
-                  <th>Monto</th>
-                  <th>Estado</th>
-                  <th>ID del proveedor</th>
+                <tr>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Proveedor</th>
+                  <th scope="col">Pedido</th>
+                  <th scope="col" className="derecha">Monto</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">ID del proveedor</th>
                 </tr>
               </thead>
               <tbody>
                 {L.datos.items.map((p) => (
-                  <tr key={p.id} style={estilos.fila}>
+                  <tr key={p.id}>
                     <td>{fechaHora(p.creadoEn)}</td>
                     <td>{METODOS[p.proveedor] || p.proveedor}</td>
-                    <td>{p.pedidoId.slice(-6)}</td>
-                    <td>{p.moneda === 'MXN' ? dinero.format(p.monto) : `${p.monto} ${p.moneda}`}</td>
-                    <td>{p.estado}</td>
-                    <td>{p.pagoIdExterno || '—'}</td>
+                    <td className="mono">{p.pedidoId.slice(-6).toUpperCase()}</td>
+                    <td className="derecha num">{p.moneda === 'MXN' ? dinero.format(p.monto) : `${p.monto} ${p.moneda}`}</td>
+                    <td><EstadoPago estado={p.estado} /></td>
+                    <td className="mono texto-3">{p.pagoIdExterno || '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
+          </div>
           <Paginador pagina={L.datos.pagina} paginas={L.datos.paginas} total={L.datos.total} onCambiar={L.setPagina} />
         </div>
       )}

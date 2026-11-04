@@ -1,23 +1,17 @@
 ---
 export const prerender = true;
-import TopBar from '../../components/TopBar.astro';
-import AdminNav from '../../components/AdminNav.astro';
+import Base from '../../layouts/Base.astro';
 import AdminPedidos from '../../components/islands/AdminPedidos.jsx';
-import '../../index.css';
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pedidos — Admin Elixir</title>
-  </head>
-  <body>
-    <TopBar />
-    <AdminNav />
-    <div style="padding: 1.5rem;">
-      <h2>Pedidos</h2>
-      <AdminPedidos client:load />
+<Base titulo="Pedidos - Admin" admin>
+  <div class="contenedor pagina">
+    <div class="encabezado-pagina">
+      <div>
+        <h1>Pedidos</h1>
+        <p>Avanza el envio de los pedidos pagados paso a paso.</p>
+      </div>
     </div>
-  </body>
-</html>
+    <AdminPedidos client:load />
+  </div>
+</Base>

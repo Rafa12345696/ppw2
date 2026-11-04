@@ -15,6 +15,18 @@ function mezclar(base, extra) {
   return resultado;
 }
 
+// Lee la fecha de vencimiento (exp) que viene dentro del JWT.
+// No verifica la firma (eso lo hace el servidor): solo evita usar un token que ya sabemos que vencio.
+export function tokenVencido(token) {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const { exp } = JSON.parse(atob(base64));
+    return typeof exp === 'number' && exp * 1000 <= Date.now();
+  } catch {
+    return true; // si no se puede leer, se trata como vencido
+  }
+}
+
 export const useStore = create(
   persist(
     (set, get) => ({
@@ -36,6 +48,17 @@ export const useStore = create(
           carrito.push({ ...producto, cantidad: Math.min(cantidad, maximo) });
         }
         set({ carrito });
+      },
+
+      // Fija la cantidad de un producto del carrito, entre 1 y lo que haya en existencia
+      cambiarCantidad: (id, cantidad) => {
+        set({
+          carrito: get().carrito.map((item) =>
+            item.id === id
+              ? { ...item, cantidad: Math.max(1, Math.min(Math.floor(cantidad) || 1, item.stock ?? Infinity)) }
+              : item,
+          ),
+        });
       },
 
       quitarDelCarrito: (id) => {
@@ -66,6 +89,12 @@ export const useStore = create(
         });
       },
 
+      // Cambia datos del usuario con sesion sin tocar el token (por ejemplo, la fecha de nacimiento)
+      actualizarUsuario: (cambios) => {
+        const { usuario } = get();
+        if (usuario) set({ usuario: { ...usuario, ...cambios } });
+      },
+
       cerrarSesion: () => {
         const { usuario, carrito, carritosGuardados } = get();
         const guardados = { ...carritosGuardados };
@@ -75,8 +104,13 @@ export const useStore = create(
     }),
     {
       name: 'elixir-storage',
+      // "hidratado" describe esta carga de la pagina: no se guarda en localStorage
+      partialize: ({ hidratado, ...resto }) => resto,
       onRehydrateStorage: () => (state) => {
-        if (state) state.hidratado = true;
+        if (!state) return;
+        state.hidratado = true;
+        // Token guardado ya vencido: se cierra la sesion antes de usarlo (el carrito se guarda)
+        if (state.token && tokenVencido(state.token)) state.cerrarSesion();
       },
     },
   ),

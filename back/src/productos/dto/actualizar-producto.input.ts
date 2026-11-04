@@ -19,4 +19,11 @@ export class ActualizarProductoInput {
 
   @Field(() => ID, { nullable: true })
   categoriaId?: string;
+
+  // 0 quita la promocion; null o sin mandar la deja como estaba
+  @Field(() => Float, { nullable: true })
+  precioAntes?: number;
+
+  @Field(() => Boolean, { nullable: true })
+  premium?: boolean;
 }

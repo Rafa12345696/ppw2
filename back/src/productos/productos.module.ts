@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
 import { ProductosService } from './productos.service.js';
 import { ProductosResolver } from './productos.resolver.js';
 import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
-  imports: [AuthModule, PassportModule],
+  imports: [AuthModule],
   providers: [ProductosService, ProductosResolver],
+  // El servidor MCP reutiliza masVendidos
+  exports: [ProductosService],
 })
 export class ProductosModule {}

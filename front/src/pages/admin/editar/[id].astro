@@ -1,25 +1,20 @@
 ---
-import TopBar from '../../../components/TopBar.astro';
-import AdminNav from '../../../components/AdminNav.astro';
+import Base from '../../../layouts/Base.astro';
 import FormularioProducto from '../../../components/islands/FormularioProducto.jsx';
-import '../../../index.css';
 
+// Sin prerender: el id viene en la URL de cada visita
 const { id } = Astro.params;
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Editar producto — Admin Elixir</title>
-  </head>
-  <body>
-    <TopBar />
-    <AdminNav />
-    <div style="padding: 1.5rem;">
-      <a href="/admin/productos">Volver</a>
-      <h2>Editar producto</h2>
-      <FormularioProducto productoId={id} client:load />
-    </div>
-  </body>
-</html>
+<Base titulo="Editar producto - Admin" admin>
+  <div class="contenedor pagina">
+    <nav class="migas" aria-label="Ruta">
+      <ol>
+        <li><a href="/admin/productos">Productos</a></li>
+        <li aria-current="page">Editar</li>
+      </ol>
+    </nav>
+    <div class="encabezado-pagina"><h1>Editar producto</h1></div>
+    <FormularioProducto productoId={id} client:load />
+  </div>
+</Base>

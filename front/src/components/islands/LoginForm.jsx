@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
 import PasswordInput from './PasswordInput';
+import { IcoAlerta, IcoInfo } from './Iconos';
 
 const MUTATION = `
   mutation($data: LoginInput!) {
@@ -12,15 +13,19 @@ const MUTATION = `
         nombre
         email
         rol
+        fechaNacimiento
+        telefono
       }
     }
   }
 `;
 
+// Solo acepta rutas internas: evita que un enlace manipulado mande a otro sitio despues de entrar
 function obtenerNext() {
   if (typeof window === 'undefined') return '/tienda';
-  const params = new URLSearchParams(window.location.search);
-  return params.get('next') || '/tienda';
+  const next = new URLSearchParams(window.location.search).get('next') || '';
+  const interna = next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\');
+  return interna ? next : '/tienda';
 }
 
 export default function LoginForm() {
@@ -28,7 +33,15 @@ export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [aviso, setAviso] = useState('');
   const [enviando, setEnviando] = useState(false);
+
+  // Se lee en el navegador (no al renderizar en el servidor) para no causar diferencias de hidratacion
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('expirada') === '1') {
+      setAviso('Tu sesion termino. Inicia sesion de nuevo para continuar.');
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,30 +58,36 @@ export default function LoginForm() {
       }
     } catch (err) {
       const mensaje = err.message || '';
-      setError(
-        mensaje.includes('incorrectos')
-          ? mensaje
-          : 'No se pudo iniciar sesion. Revisa que el servidor este funcionando.',
-      );
+      const conocido = mensaje.includes('incorrectos') || mensaje.includes('desactivada');
+      setError(conocido ? mensaje : 'No se pudo iniciar sesion. Revisa que el servidor este funcionando.');
     }
     setEnviando(false);
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 300 }}>
-      <div style={{ marginBottom: '1rem' }}>
-        <label>Correo</label><br />
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%' }} />
+    <form onSubmit={handleSubmit} className="pila">
+      {aviso && (
+        <div className="alerta alerta-info" role="status">
+          <IcoInfo /> <span>{aviso}</span>
+        </div>
+      )}
+      <div className="campo">
+        <label htmlFor="login-email">Correo</label>
+        <input id="login-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </div>
-      <div style={{ marginBottom: '0.5rem' }}>
-        <label>Contraseña</label><br />
-        <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} />
+      <div className="campo">
+        <div className="fila-entre">
+          <label htmlFor="login-password" className="etiqueta-campo">Contraseña</label>
+          <a href="/olvide-password" className="texto-3">¿La olvidaste?</a>
+        </div>
+        <PasswordInput id="login-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
-      <p style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
-        <a href="/olvide-password">¿Olvidaste tu contraseña?</a>
-      </p>
-      {error && <p style={{ color: '#b00020' }}>{error}</p>}
-      <button type="submit" disabled={enviando}>
+      {error && (
+        <div className="alerta alerta-error" role="alert">
+          <IcoAlerta /> <span>{error}</span>
+        </div>
+      )}
+      <button type="submit" className="btn btn-primario btn-bloque btn-lg" disabled={enviando} aria-busy={enviando}>
         {enviando ? 'Entrando...' : 'Entrar'}
       </button>
     </form>

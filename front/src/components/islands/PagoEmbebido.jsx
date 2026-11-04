@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
+import { dinero } from '../../formato';
+import { IcoReloj, IcoCandado } from './Iconos';
 
 const CONFIG = `
   query {
@@ -311,74 +313,93 @@ export default function PagoEmbebido() {
       .finally(() => setEnviandoCard(false));
   };
 
-  if (error) return <p style={{ color: '#b00020' }}>{error}</p>;
-  if (!pedido || !config) return <p>Cargando tu pedido...</p>;
+  if (error) return <div className="alerta alerta-error" role="alert">{error}</div>;
+  if (!pedido || !config) return <div className="esqueleto" style={{ height: 320 }} aria-label="Cargando tu pedido" />;
 
   if (pedido.estado === 'PAGADO') {
     return (
-      <div>
-        <h2>Este pedido ya esta pagado</h2>
-        <a href="/mis-pedidos"><button>Ver mis pedidos</button></a>
+      <div className="vacio">
+        <h1>Este pedido ya esta pagado</h1>
+        <p>No necesitas hacer nada mas. Puedes seguir su envio desde Mis pedidos.</p>
+        <a className="btn btn-primario" href="/mis-pedidos">Ver mis pedidos</a>
       </div>
     );
   }
 
   if (!activo) {
     return (
-      <div>
-        <h2>Este pedido ya no esta activo</h2>
-        <p>Su estado es {pedido.estado.toLowerCase()}.</p>
-        <a href="/tienda"><button>Volver a la tienda</button></a>
+      <div className="vacio">
+        <h1>Este pedido ya no esta activo</h1>
+        <p>Su estado es {pedido.estado.toLowerCase().replace('_', ' ')}. Los productos se liberaron.</p>
+        <a className="btn btn-primario" href="/tienda">Volver a la tienda</a>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 720 }}>
-      <h2>Pagar tu pedido</h2>
-      <p>
-        Pedido {pedido.id.slice(-6)} — <strong>Total: ${pedido.total}</strong>
-      </p>
-      {pedido.expiraEn && (
-        <p style={{ marginBottom: '1rem' }}>
-          Reservamos tus productos hasta las {new Date(pedido.expiraEn).toLocaleTimeString('es-MX')}.
-        </p>
-      )}
-
-      {aviso && (
-        <div style={{ background: '#fff8e1', color: '#4a3b00', padding: '1rem', borderRadius: 8, marginBottom: '1rem' }}>
-          <p>{aviso.texto}</p>
-          {aviso.url && (
-            <p style={{ marginTop: '0.5rem' }}>
-              <a href={aviso.url} target="_blank" rel="noopener noreferrer">Ver mi ficha de pago</a>
-            </p>
-          )}
-          <p style={{ marginTop: '0.5rem' }}><a href="/mis-pedidos">Ir a Mis pedidos</a></p>
+    <div className="compra">
+      <div className="pila-lg">
+        <div className="encabezado-pagina" style={{ marginBottom: 0 }}>
+          <div>
+            <h1>Pagar tu pedido</h1>
+            <p>Elige un metodo. Tus datos de pago los procesa directamente el proveedor.</p>
+          </div>
         </div>
-      )}
 
-      <section style={caja}>
-        <h3 style={{ marginBottom: '0.5rem' }}>Tarjeta, efectivo o cajero</h3>
-        {!config.mpPublicKey && <p>Mercado Pago no esta configurado.</p>}
-        {mpError && <p style={{ color: '#b00020', marginBottom: '0.5rem' }}>{mpError}</p>}
-        <div id="mp-brick" />
-      </section>
+        {aviso && (
+          <div className="alerta alerta-aviso" role="status">
+            <div className="pila-sm">
+              <p>{aviso.texto}</p>
+              <div className="acciones">
+                {aviso.url && (
+                  <a href={aviso.url} target="_blank" rel="noopener noreferrer">Ver mi ficha de pago<span className="sr-only"> (se abre en otra pestaña)</span></a>
+                )}
+                <a href="/mis-pedidos">Ir a Mis pedidos</a>
+              </div>
+            </div>
+          </div>
+        )}
 
-     <section style={caja}>
-  <h3 style={{ marginBottom: '0.5rem' }}>PayPal</h3>
+        <section className="tarjeta pila" aria-labelledby="mp-titulo">
+          <div className="pila-sm" style={{ gap: 2 }}>
+            <h2 id="mp-titulo">Tarjeta, efectivo o cajero</h2>
+            <p className="texto-3">Con Mercado Pago: credito, debito, OXXO y cajeros.</p>
+          </div>
+          {!config.mpPublicKey && <p className="texto-2">Mercado Pago no esta configurado.</p>}
+          {mpError && <div className="alerta alerta-error" role="alert">{mpError}</div>}
+          <div id="mp-brick" />
+        </section>
 
-  {!config.paypalClientId && (
-    <p>PayPal no esta configurado.</p>
-  )}
+        <section className="tarjeta pila" aria-labelledby="pp-titulo">
+          <div className="pila-sm" style={{ gap: 2 }}>
+            <h2 id="pp-titulo">PayPal</h2>
+            <p className="texto-3">Paga con tu cuenta PayPal; se abre una ventana de PayPal.</p>
+          </div>
+          {!config.paypalClientId && <p className="texto-2">PayPal no esta configurado.</p>}
+          <div id="pp-botones" />
+          {ppError && <div className="alerta alerta-error" role="alert">{ppError}</div>}
+        </section>
+      </div>
 
-  <div id="pp-botones" style={{ marginBottom: '1rem' }} />
-
-  {ppError && (
-    <p style={{ color: '#b00020', marginTop: '0.5rem' }}>
-      {ppError}
-    </p>
-  )}
-</section>
+      <aside className="tarjeta resumen pila" aria-labelledby="resumen-pago">
+        <h2 id="resumen-pago">Tu pedido</h2>
+        <dl>
+          <dt>Pedido</dt>
+          <dd className="mono">{pedido.id.slice(-6).toUpperCase()}</dd>
+          <dt className="total">Total</dt>
+          <dd className="total">{dinero.format(pedido.total)}</dd>
+        </dl>
+        {pedido.expiraEn && (
+          <p className="fila texto-2" style={{ gap: 8, flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+            <IcoReloj />
+            <span>Apartamos tus productos hasta las <strong>{new Date(pedido.expiraEn).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</strong>.</span>
+          </p>
+        )}
+        <p className="fila texto-3" style={{ gap: 8, flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+          <IcoCandado />
+          <span>Elixir no guarda los datos de tu tarjeta.</span>
+        </p>
+      </aside>
     </div>
   );
 }

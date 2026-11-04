@@ -10,4 +10,12 @@ export class RegistrarInput {
 
   @Field()
   password: string;
+
+  // Formato AAAA-MM-DD (el que manda <input type="date">)
+  @Field()
+  fechaNacimiento: string;
+
+  // Opcional: para recibir avisos del pedido por WhatsApp
+  @Field({ nullable: true })
+  telefono?: string;
 }

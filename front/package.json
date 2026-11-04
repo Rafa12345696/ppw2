@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@astrojs/netlify": "^8.2.9",
-    "@astrojs/node": "^11.1.7",
     "@astrojs/react": "^7.0.0",
     "@netlify/blobs": "^11.1.4",
     "@types/react": "^19.3.0",

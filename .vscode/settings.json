@@ -1,0 +1,27 @@
+{
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.astro": true,
+    "**/.netlify": true,
+    "**/*.tsbuildinfo": true
+  },
+  "search.exclude": {
+    "**/package-lock.json": true,
+    "back/src/schema.gql": true
+  },
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "*.module.ts": "${capture}.service.ts, ${capture}.resolver.ts, ${capture}.controller.ts, ${capture}.constants.ts, ${capture}.model.ts, ${capture}.models.ts",
+    "package.json": "package-lock.json, tsconfig*.json, nest-cli.json, vitest.config*.ts, astro.config.mjs, .prettierrc, .oxlintrc.json, .gitignore, AGENTS.md, CLAUDE.md, README.md",
+    ".env": ".env.*"
+  },
+  "explorer.compactFolders": false,
+  "workbench.editor.labelFormat": "short",
+  "editor.tabSize": 2,
+  "editor.formatOnSave": false,
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.associations": { ".env*": "dotenv" }
+}

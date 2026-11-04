@@ -1,0 +1,17 @@
+---
+export const prerender = true;
+import Base from '../../layouts/Base.astro';
+import AdminBitacora from '../../components/islands/AdminBitacora.jsx';
+---
+
+<Base titulo="Bitacora - Admin" admin>
+  <div class="contenedor pagina">
+    <div class="encabezado-pagina">
+      <div>
+        <h1>Bitacora de acciones</h1>
+        <p>Cada cambio que hace un administrador queda guardado en PostgreSQL.</p>
+      </div>
+    </div>
+    <AdminBitacora client:load />
+  </div>
+</Base>

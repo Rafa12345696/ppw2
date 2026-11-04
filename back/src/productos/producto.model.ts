@@ -12,6 +12,13 @@ export class Producto {
   @Field(() => Float)
   precio: number;
 
+  // Precio antes de la promocion (se muestra tachado). Null si no esta en promocion.
+  @Field(() => Float, { nullable: true })
+  precioAntes?: number | null;
+
+  @Field(() => Boolean, { nullable: true })
+  premium?: boolean | null;
+
   @Field(() => Int)
   stock: number;
 

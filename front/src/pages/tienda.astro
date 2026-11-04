@@ -1,8 +1,8 @@
 ---
-import TopBar from '../components/TopBar.astro';
+// Sin prerender: el catalogo se pide en cada visita
+import Base from '../layouts/Base.astro';
 import CatalogoVivo from '../components/islands/CatalogoVivo.jsx';
 import { graphqlFetchSSR } from '../api.js';
-import '../index.css';
 
 const QUERY = `
   query {
@@ -13,72 +13,68 @@ const QUERY = `
         id
         nombre
         precio
+        precioAntes
+        premium
         stock
         imagen
         categoriaId
       }
     }
+    masVendidos(limite: 8) {
+      id
+    }
   }
 `;
 
 let categorias = [];
+let masVendidos = [];
 let error = false;
 
 try {
   const data = await graphqlFetchSSR(QUERY);
   if (!data?.categorias) error = true;
   categorias = data?.categorias || [];
+  masVendidos = (data?.masVendidos || []).map((p) => p.id);
 } catch (e) {
   error = true;
 }
 
 const todosLosProductos = categorias.flatMap((c) => c.productos);
+const listaCategorias = categorias.map((c) => ({ id: c.id, nombre: c.nombre }));
+
+// El titulo responde a lo que el cliente pidio desde la barra superior
+const busqueda = (Astro.url.searchParams.get('q') || '').trim().slice(0, 80);
+const destacado = Astro.url.searchParams.get('destacado');
+const TITULOS = { promo: 'Promociones', premium: 'Licores premium', vendidos: 'Los mas vendidos' };
+const titulo = busqueda ? `Resultados para “${busqueda}”` : TITULOS[destacado] || 'Todos los licores';
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tienda — Elixir</title>
-  </head>
-  <body>
-    <TopBar />
-
-    <section style="padding: 2rem; background: #222; color: white;">
-      <h1>Bienvenido a Elixir</h1>
-      <p>Los mejores licores, directo a tu puerta.</p>
-    </section>
-
-    <div style="display: flex;">
-      <aside style="padding: 1rem; min-width: 150px; border-right: 1px solid #ddd;">
-        <h4>Categorias</h4>
-        {categorias.map((cat) => (
-          <a href={`/categoria/${cat.id}`} style="display: block; padding: 0.4rem 0; color: inherit; text-decoration: none;">
-            {cat.nombre}
-          </a>
-        ))}
-      </aside>
-
-      <main style="flex: 1;">
-        <h3 style="padding: 0 1rem;">Catalogo</h3>
-
-        {error && (
-          <div style="padding: 1rem; color: #b00020;">
-            <p>Ocurrio un error al cargar los productos. Intentando de nuevo...</p>
-          </div>
-        )}
-
-        <CatalogoVivo client:load productos={todosLosProductos} recargarAlMontar={error} />
-      </main>
+<Base titulo={busqueda ? `Buscar: ${busqueda}` : TITULOS[destacado] || 'Tienda'}>
+  <div class="contenedor pagina">
+    <nav class="migas" aria-label="Ruta">
+      <ol>
+        <li><a href="/tienda">Inicio</a></li>
+        <li aria-current="page">{titulo}</li>
+      </ol>
+    </nav>
+    <div class="encabezado-pagina">
+      <h1>{titulo}</h1>
     </div>
 
-    <section style="padding: 1rem; background: #f5f5f5;">
-      <h4>Venta responsable</h4>
-      <p>Este sitio es exclusivo para mayores de edad. Verificamos tu identidad antes de completar cualquier compra.</p>
-    </section>
+    {error && (
+      <div class="alerta alerta-aviso" role="status" style="margin-bottom: 16px;">
+        No pudimos cargar el catalogo desde el servidor. Lo estamos intentando de nuevo...
+      </div>
+    )}
 
-    <footer style="padding: 1rem; background: #111; color: white; text-align: center;">
-      Elixir © 2026
-    </footer>
-  </body>
-</html>
+    <CatalogoVivo
+      client:load
+      productos={todosLosProductos}
+      categorias={listaCategorias}
+      recargarAlMontar={error}
+      masVendidos={masVendidos}
+      busquedaInicial={busqueda}
+      destacadoInicial={destacado}
+    />
+  </div>
+</Base>

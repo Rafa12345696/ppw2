@@ -1,23 +1,16 @@
 ---
 export const prerender = true;
-import TopBar from '../components/TopBar.astro';
+import Base from '../layouts/Base.astro';
 import CarritoContenido from '../components/islands/CarritoContenido.jsx';
-import '../index.css';
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Carrito — Elixir</title>
-  </head>
-  <body>
-    <TopBar />
-    <a href="/tienda" style="display: inline-block; margin: 1rem;">Volver</a>
-
-    <div style="padding: 1rem;">
-      <h2>Tu carrito</h2>
-      <CarritoContenido client:load />
+<Base titulo="Tu carrito">
+  <div class="contenedor pagina">
+    <div class="encabezado-pagina">
+      <div>
+        <h1>Tu carrito</h1>
+      </div>
     </div>
-  </body>
-</html>
+    <CarritoContenido client:load />
+  </div>
+</Base>

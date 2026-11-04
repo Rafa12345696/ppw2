@@ -5,15 +5,29 @@ export default function SesionInfo() {
   const cerrarSesion = useStore((state) => state.cerrarSesion);
 
   if (!usuario) {
-    return <a href="/login" style={{ color: 'white' }}>Entrar</a>;
+    return (
+      <>
+        <a href="/login">Iniciar sesion</a>
+        <a href="/registro">Crear cuenta</a>
+      </>
+    );
   }
 
   return (
-    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-      {usuario.rol === 'ADMIN' && <a href="/admin" style={{ color: 'white' }}>Admin</a>}
-      <a href="/mis-pedidos" style={{ color: 'white' }}>Mis pedidos</a>
-      <span>Hola, {usuario.nombre}</span>
-      <button onClick={() => { cerrarSesion(); window.location.href = '/tienda'; }}>Salir</button>
-    </div>
+    <>
+      {usuario.rol === 'ADMIN' && <a href="/admin">Panel admin</a>}
+      <a href="/mis-pedidos">Mis pedidos</a>
+      <span className="texto-2">Hola, {usuario.nombre.split(' ')[0]}</span>
+      <button
+        type="button"
+        className="btn btn-fantasma btn-sm"
+        onClick={() => {
+          cerrarSesion();
+          window.location.href = '/tienda';
+        }}
+      >
+        Salir
+      </button>
+    </>
   );
 }

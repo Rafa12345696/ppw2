@@ -17,7 +17,7 @@ export default function RequiereAdmin({ children }) {
   }, [usuario, hidratado]);
 
   if (!listo) {
-    return <p>Verificando acceso...</p>;
+    return <div className="esqueleto" style={{ height: 240 }} aria-label="Verificando acceso" />;
   }
 
   return children;

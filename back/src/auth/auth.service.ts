@@ -13,6 +13,8 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { LoginInput } from './dto/login.input.js';
 import { RegistrarInput } from './dto/registrar.input.js';
+import { leerFechaNacimiento } from '../comun/edad.js';
+import { normalizarTelefono } from '../comun/telefono.js';
 
 @Injectable()
 export class AuthService {
@@ -38,6 +40,10 @@ export class AuthService {
       throw new BadRequestException('La contraseña debe tener al menos 6 caracteres');
     }
 
+    // Lanza error si la fecha no es valida o si es menor de edad
+    const fechaNacimiento = leerFechaNacimiento(data.fechaNacimiento);
+    const telefono = normalizarTelefono(data.telefono);
+
     const email = this.normalizar(data.email);
     const existente = await this.usuariosService.findByEmail(email);
     if (existente) {
@@ -51,6 +57,8 @@ export class AuthService {
       email,
       password: passwordHasheado,
       rol: 'CLIENTE',
+      fechaNacimiento,
+      telefono,
     });
 
     return this.generarRespuesta(usuario);
@@ -62,7 +70,10 @@ export class AuthService {
       throw new UnauthorizedException('Correo o contraseña incorrectos');
     }
 
-    if (usuario.activo === false) { throw new UnauthorizedException('Esta cuenta esta desactivada'); }
+    if (usuario.activo === false) {
+      throw new UnauthorizedException('Esta cuenta esta desactivada');
+    }
+
     const passwordValido = await bcrypt.compare(data.password, usuario.password!);
     if (!passwordValido) {
       throw new UnauthorizedException('Correo o contraseña incorrectos');

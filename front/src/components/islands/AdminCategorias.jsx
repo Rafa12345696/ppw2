@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
 import RequiereAdmin from './RequiereAdmin';
-import { estilos } from './adminUi';
+import { Mensaje } from './adminUi';
 
 const QUERY = `query { categoriasAdmin { id nombre totalProductos } }`;
 const CREAR = `mutation($nombre: String!) { crearCategoria(nombre: $nombre) { id } }`;
@@ -54,73 +54,93 @@ function Gestion() {
     ejecutar(ELIMINAR, { id: c.id });
   };
 
-  if (error) return <p style={{ color: '#b00020' }}>{error}</p>;
-  if (!categorias) return <p>Cargando categorias...</p>;
+  if (error) return <div className="alerta alerta-error" role="alert">{error}</div>;
+  if (!categorias) return <div className="esqueleto" style={{ height: 220 }} aria-label="Cargando categorias" />;
 
   const visibles = categorias.filter((c) => c.nombre.toLowerCase().includes(buscar.trim().toLowerCase()));
 
   return (
-    <div>
-      <form onSubmit={crear} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-        <input value={nueva} onChange={(e) => setNueva(e.target.value)} placeholder="Nombre de la nueva categoria" required minLength={2} maxLength={40} />
-        <button type="submit">+ Crear categoria</button>
-      </form>
-
-      <div style={{ marginBottom: '1rem' }}>
-        <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar categoria" style={{ minWidth: 240 }} />
+    <div className="pila-lg">
+      <div className="fila-entre" style={{ alignItems: 'flex-end' }}>
+        <form onSubmit={crear} className="fila" style={{ alignItems: 'flex-end' }}>
+          <label className="campo-compacto">
+            Nueva categoria
+            <input value={nueva} onChange={(e) => setNueva(e.target.value)} placeholder="Ej. Mezcal" required minLength={2} maxLength={40} />
+          </label>
+          <button type="submit" className="btn btn-primario btn-sm" style={{ minHeight: 40 }}>Crear categoria</button>
+        </form>
+        <label className="campo-compacto">
+          Buscar
+          <input type="search" value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Nombre" style={{ minWidth: 220 }} />
+        </label>
       </div>
 
-      {mensaje && <p style={{ color: '#b00020' }}>{mensaje}</p>}
+      <Mensaje>{mensaje}</Mensaje>
 
       {visibles.length === 0 ? (
-        <p>No hay categorias que coincidan.</p>
+        <div className="vacio"><p>No hay categorias que coincidan.</p></div>
       ) : (
-        <table style={estilos.tabla}>
-          <thead>
-            <tr style={estilos.encabezado}>
-              <th>Nombre</th>
-              <th>Productos</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibles.map((c) => {
-              const editando = edicion?.id === c.id;
-              return (
-                <tr key={c.id} style={estilos.fila}>
-                  <td>
-                    {editando ? (
-                      <input value={edicion.nombre} onChange={(e) => setEdicion({ ...edicion, nombre: e.target.value })} />
-                    ) : (
-                      c.nombre
-                    )}
-                  </td>
-                  <td>{c.totalProductos}</td>
-                  <td>
-                    {editando ? (
-                      <>
-                        <button onClick={guardar}>Guardar</button>
-                        <button style={{ marginLeft: '0.4rem' }} onClick={() => setEdicion(null)}>Cancelar</button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={() => setEdicion({ id: c.id, nombre: c.nombre })}>Renombrar</button>
-                        <button
-                          style={{ marginLeft: '0.4rem' }}
-                          disabled={c.totalProductos > 0}
-                          title={c.totalProductos > 0 ? 'Mueve sus productos a otra categoria primero' : ''}
-                          onClick={() => eliminar(c)}
-                        >
-                          Eliminar
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="tabla-envoltura">
+          <table className="tabla">
+            <caption className="sr-only">Categorias</caption>
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col" className="derecha">Productos</th>
+                <th scope="col"><span className="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibles.map((c) => {
+                const editando = edicion?.id === c.id;
+                return (
+                  <tr key={c.id}>
+                    <td>
+                      {editando ? (
+                        <label className="campo-compacto">
+                          <span className="sr-only">Nuevo nombre de {c.nombre}</span>
+                          <input value={edicion.nombre} onChange={(e) => setEdicion({ ...edicion, nombre: e.target.value })} autoFocus />
+                        </label>
+                      ) : (
+                        c.nombre
+                      )}
+                    </td>
+                    <td className="derecha num">{c.totalProductos}</td>
+                    <td>
+                      <div className="acciones" style={{ justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                        {editando ? (
+                          <>
+                            <button type="button" className="btn btn-primario btn-sm" onClick={guardar}>Guardar</button>
+                            <button type="button" className="btn btn-fantasma btn-sm" onClick={() => setEdicion(null)}>Cancelar</button>
+                          </>
+                        ) : (
+                          <>
+                            <button type="button" className="btn btn-neutro btn-sm" onClick={() => setEdicion({ id: c.id, nombre: c.nombre })}>
+                              Renombrar<span className="sr-only"> {c.nombre}</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-peligro btn-sm"
+                              disabled={c.totalProductos > 0}
+                              title={c.totalProductos > 0 ? 'Mueve sus productos a otra categoria primero' : undefined}
+                              aria-describedby={c.totalProductos > 0 ? `no-borrar-${c.id}` : undefined}
+                              onClick={() => eliminar(c)}
+                            >
+                              Eliminar<span className="sr-only"> {c.nombre}</span>
+                            </button>
+                            {c.totalProductos > 0 && (
+                              <span id={`no-borrar-${c.id}`} className="sr-only">No se puede eliminar porque tiene productos</span>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

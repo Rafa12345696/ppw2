@@ -1,13 +1,59 @@
 ---
 import CartBadge from './islands/CartBadge.jsx';
 import SesionInfo from './islands/SesionInfo.jsx';
+import AvisoEdad from './islands/AvisoEdad.jsx';
+
+// En el panel de admin no se muestran los apartados de la tienda
+const { admin = false } = Astro.props;
+
+// En la tienda se marca el apartado activo y se conserva lo que se busco
+const url = Astro.url;
+const enTienda = url.pathname.replace(/\/$/, '') === '/tienda';
+const destacado = enTienda ? url.searchParams.get('destacado') : null;
+const busqueda = enTienda ? url.searchParams.get('q') || '' : '';
+
+const apartados = [
+  { href: '/tienda', texto: 'Todo', activo: enTienda && !destacado },
+  { href: '/tienda?destacado=vendidos', texto: 'Mas vendidos', activo: destacado === 'vendidos' },
+  { href: '/tienda?destacado=premium', texto: 'Premium', activo: destacado === 'premium' },
+  { href: '/tienda?destacado=promo', texto: 'Promociones', activo: destacado === 'promo', clase: 'destacado' },
+];
 ---
 
-<div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #1a1a1a; color: white;">
-  <a href="/tienda" style="color: white; text-decoration: none; font-size: 1.5rem; font-weight: bold;">Elixir</a>
-  <nav style="display: flex; gap: 1rem; align-items: center;">
-    <a href="/tienda" style="color: white;">Inicio</a>
-    <a href="/carrito" style="color: white;">Carrito <CartBadge client:load /></a>
-    <SesionInfo client:load />
-  </nav>
+<div class="barra-aviso">
+  <div class="contenedor">
+    <span>Pago seguro con Mercado Pago y PayPal</span>
+    <span>Venta exclusiva para mayores de 18 años</span>
+  </div>
 </div>
+
+<header class="cabecera">
+  <div class="contenedor cabecera-principal">
+    <a href="/tienda" class="logo" aria-label="Elixir, ir a la tienda">elixir</a>
+
+    <form class="buscador" action="/tienda" method="get" role="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <label for="q" class="sr-only">Buscar productos</label>
+      <input id="q" name="q" type="search" value={busqueda} placeholder="Buscar tequila, whisky, mezcal..." autocomplete="off" />
+      <button type="submit" class="btn btn-fantasma btn-sm">Buscar</button>
+    </form>
+
+    <div class="cuenta">
+      <SesionInfo client:load />
+      <a href="/carrito" class="btn btn-primario">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 8h14l-1 12H6z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg>
+        Carrito <CartBadge client:load />
+      </a>
+    </div>
+  </div>
+
+  {!admin && (
+    <nav class="contenedor menu-categorias" aria-label="Apartados de la tienda">
+      {apartados.map((a) => (
+        <a href={a.href} class={a.clase} aria-current={a.activo ? 'page' : undefined}>{a.texto}</a>
+      ))}
+    </nav>
+  )}
+</header>
+
+<AvisoEdad client:load />

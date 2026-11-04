@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
 import RequiereAdmin from './RequiereAdmin';
-import { useListado, Paginador, BarraFiltros, Campo, estilos, dinero } from './adminUi';
+import { useListado, Paginador, BarraFiltros, Campo, EstadoListado, Mensaje, dinero } from './adminUi';
+import { Etiquetas } from './Precio';
 
 const QUERY = `
   query($filtro: FiltroProductos, $pagina: Int, $porPagina: Int) {
@@ -10,7 +11,7 @@ const QUERY = `
       total
       pagina
       paginas
-      items { id nombre precio stock categoria { nombre } }
+      items { id nombre precio precioAntes premium stock categoria { nombre } }
     }
   }
 `;
@@ -38,7 +39,7 @@ function Lista() {
   }, [token]);
 
   const eliminar = async (p) => {
-    if (!confirm(`¿Eliminar "${p.nombre}"?`)) return;
+    if (!confirm(`¿Eliminar "${p.nombre}"? Esta accion no se puede deshacer.`)) return;
     setMensaje('');
     try {
       await graphqlRequest(ELIMINAR, { id: p.id }, token);
@@ -50,7 +51,10 @@ function Lista() {
 
   return (
     <div>
-      <a href="/admin/nuevo"><button style={{ marginBottom: '1rem' }}>+ Nuevo producto</button></a>
+      <div className="fila-entre" style={{ marginBottom: 16 }}>
+        <span className="texto-2">Los cambios se ven al instante en la tienda.</span>
+        <a href="/admin/nuevo" className="btn btn-primario">+ Nuevo producto</a>
+      </div>
 
       <BarraFiltros
         escrito={L.escrito}
@@ -75,44 +79,61 @@ function Lista() {
         </Campo>
       </BarraFiltros>
 
-      {mensaje && <p style={{ color: '#b00020' }}>{mensaje}</p>}
-      {L.error && <p style={{ color: '#b00020' }}>{L.error}</p>}
-      {!L.datos && !L.error && <p>Cargando productos...</p>}
+      <Mensaje>{mensaje}</Mensaje>
+      <EstadoListado L={L} vacio="No hay productos con esos filtros." />
 
-      {L.datos && (
-        <div style={{ opacity: L.cargando ? 0.6 : 1 }}>
-          {L.datos.items.length === 0 ? (
-            <p>No hay productos con esos filtros.</p>
-          ) : (
-            <table style={estilos.tabla}>
+      {L.datos && L.datos.items.length > 0 && (
+        <div style={{ opacity: L.cargando ? 0.6 : 1 }} aria-busy={L.cargando}>
+          <div className="tabla-envoltura">
+            <table className="tabla">
+              <caption className="sr-only">Productos</caption>
               <thead>
-                <tr style={estilos.encabezado}>
-                  <th>Nombre</th>
-                  <th>Categoria</th>
-                  <th>Precio</th>
-                  <th>Stock</th>
-                  <th>Acciones</th>
+                <tr>
+                  <th scope="col">Producto</th>
+                  <th scope="col">Categoria</th>
+                  <th scope="col" className="derecha">Precio</th>
+                  <th scope="col" className="derecha">Stock</th>
+                  <th scope="col"><span className="sr-only">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
                 {L.datos.items.map((p) => (
-                  <tr key={p.id} style={estilos.fila}>
-                    <td>{p.nombre}</td>
+                  <tr key={p.id}>
+                    <td>
+                      <div className="pila-sm" style={{ gap: 4 }}>
+                        <strong style={{ fontWeight: 500 }}>{p.nombre}</strong>
+                        <Etiquetas producto={p} />
+                      </div>
+                    </td>
                     <td>{p.categoria?.nombre || '—'}</td>
-                    <td>{dinero.format(p.precio)}</td>
-                    <td style={{ color: p.stock === 0 ? '#b00020' : p.stock <= 5 ? '#b26a00' : 'inherit' }}>
-                      {p.stock === 0 ? 'Agotado' : p.stock}
+                    <td className="derecha num">
+                      {dinero.format(p.precio)}
+                      {p.precioAntes > p.precio && <div className="texto-3"><s>{dinero.format(p.precioAntes)}</s></div>}
+                    </td>
+                    <td className="derecha num">
+                      {p.stock === 0 ? (
+                        <span className="etiqueta etiqueta-error">Agotado</span>
+                      ) : p.stock <= 5 ? (
+                        <span className="etiqueta etiqueta-aviso">{p.stock}</span>
+                      ) : (
+                        p.stock
+                      )}
                     </td>
                     <td>
-                      <a href={`/admin/editar/${p.id}`}>Editar</a>
-                      {' | '}
-                      <button onClick={() => eliminar(p)}>Eliminar</button>
+                      <div className="acciones" style={{ justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                        <a className="btn btn-neutro btn-sm" href={`/admin/editar/${p.id}`}>
+                          Editar<span className="sr-only"> {p.nombre}</span>
+                        </a>
+                        <button type="button" className="btn btn-peligro btn-sm" onClick={() => eliminar(p)}>
+                          Eliminar<span className="sr-only"> {p.nombre}</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
+          </div>
           <Paginador pagina={L.datos.pagina} paginas={L.datos.paginas} total={L.datos.total} onCambiar={L.setPagina} />
         </div>
       )}

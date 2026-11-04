@@ -19,4 +19,11 @@ export class CrearProductoInput {
 
   @Field(() => ID)
   categoriaId: string;
+
+  // Opcional: precio anterior para mostrar la promocion. Debe ser mayor que precio.
+  @Field(() => Float, { nullable: true })
+  precioAntes?: number;
+
+  @Field(() => Boolean, { nullable: true })
+  premium?: boolean;
 }

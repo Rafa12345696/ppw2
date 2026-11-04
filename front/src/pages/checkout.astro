@@ -1,20 +1,17 @@
 ---
 export const prerender = true;
-import TopBar from '../components/TopBar.astro';
+import Base from '../layouts/Base.astro';
 import CheckoutContenido from '../components/islands/CheckoutContenido.jsx';
-import '../index.css';
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Checkout — Elixir</title>
-  </head>
-  <body>
-    <TopBar />
-    <div style="padding: 2rem;">
-      <CheckoutContenido client:load />
+<Base titulo="Confirmar pedido">
+  <div class="contenedor pagina">
+    <div class="encabezado-pagina">
+      <div>
+        <h1>Confirmar pedido</h1>
+        <p>Revisa tus productos antes de pagar.</p>
+      </div>
     </div>
-  </body>
-</html>
+    <CheckoutContenido client:load />
+  </div>
+</Base>
