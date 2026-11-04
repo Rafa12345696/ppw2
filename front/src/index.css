@@ -388,6 +388,9 @@ legend { padding: 0; font-weight: 600; }
 .lista-simple { list-style: none; display: flex; flex-direction: column; }
 .lista-simple li { display: flex; justify-content: space-between; gap: var(--e3); padding: var(--e2) 0; border-bottom: 1px solid var(--c-borde); font-size: var(--t-sm); }
 .lista-simple li:last-child { border-bottom: 0; }
+.lista-check { list-style: none; display: flex; flex-direction: column; gap: var(--e2); }
+.lista-check li { display: flex; gap: var(--e2); align-items: flex-start; }
+.lista-check svg { color: var(--c-ok); flex: none; margin-top: 4px; }
 
 /* Comprobante */
 .documento { max-width: 760px; border: 1px solid var(--c-borde); border-radius: var(--r3); padding: var(--e6); background: #fff; }

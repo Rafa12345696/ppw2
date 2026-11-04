@@ -11,7 +11,7 @@ const QUERY = `
       total
       pagina
       paginas
-      items { id nombre email rol activo createdAt }
+      items { id nombre email rol activo identidadVerificada createdAt }
     }
   }
 `;
@@ -174,6 +174,7 @@ function Gestion() {
                             <span className="punto" aria-hidden="true" />
                             {activo ? 'Activo' : 'Desactivado'}
                           </span>
+                          {u.identidadVerificada && <span className="etiqueta etiqueta-info" style={{ marginLeft: 6 }}>INE verificada</span>}
                         </td>
                         <td>{fechaHora(u.createdAt)}</td>
                         <td style={{ minWidth: 260 }}>

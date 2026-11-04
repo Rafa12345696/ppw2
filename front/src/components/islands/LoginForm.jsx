@@ -15,6 +15,7 @@ const MUTATION = `
         rol
         fechaNacimiento
         telefono
+        identidadVerificada
       }
     }
   }

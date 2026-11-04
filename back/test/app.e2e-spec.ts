@@ -105,4 +105,17 @@ describe('Elixir (e2e)', () => {
     const r = await mcp(app, 'tools/call', { name: 'estado_pedido', arguments: { pedidoId: '65f0c0ffee00000000000001' } }, 4).expect(200);
     expect(r.body.result.isError).toBe(true);
   });
+  it('Webhook de Didit: rechaza un aviso sin firma valida', async () => {
+    process.env.DIDIT_WEBHOOK_SECRET = 'secreto-de-prueba';
+    try {
+      await request(app.getHttpServer())
+        .post('/webhooks/didit')
+        .set('X-Signature-V2', 'falsa')
+        .set('X-Timestamp', String(Math.floor(Date.now() / 1000)))
+        .send({ session_id: 'abc', status: 'Approved', vendor_data: '65f0c0ffee00000000000001' })
+        .expect(401);
+    } finally {
+      delete process.env.DIDIT_WEBHOOK_SECRET;
+    }
+  });
 });

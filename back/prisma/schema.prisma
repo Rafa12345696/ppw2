@@ -13,21 +13,25 @@ enum Rol {
 }
 
 model Usuario {
-  id              String               @id @default(auto()) @map("_id") @db.ObjectId
-  nombre          String
-  email           String               @unique
-  password        String?
-  rol             Rol                  @default(CLIENTE)
-  activo          Boolean?             @default(true)
+  id                  String               @id @default(auto()) @map("_id") @db.ObjectId
+  nombre              String
+  email               String               @unique
+  password            String?
+  rol                 Rol                  @default(CLIENTE)
+  activo              Boolean?             @default(true)
   // Opcional: las cuentas viejas o creadas por el admin la confirman en el checkout
-  fechaNacimiento DateTime?
+  fechaNacimiento     DateTime?
   // Opcional, formato +52XXXXXXXXXX: para avisos de pedido por WhatsApp
-  telefono        String?
-  refreshTokens   RefreshToken[]
-  passwordResets  PasswordResetToken[]
-  pedidos         Pedido[]
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  telefono            String?
+  // Verificacion de identidad con INE + selfie (Didit). Se llena con el aviso de Didit
+  identidadVerificada Boolean?             @default(false)
+  verificacionEstado  String?
+  verificacionSesion  String?
+  refreshTokens       RefreshToken[]
+  passwordResets      PasswordResetToken[]
+  pedidos             Pedido[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 }
 
 model RefreshToken {

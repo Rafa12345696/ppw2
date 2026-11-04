@@ -30,6 +30,14 @@ export class Usuario {
   @Field(() => String, { nullable: true })
   telefono?: string | null;
 
+  // true cuando Didit aprobo su INE y selfie
+  @Field(() => Boolean, { nullable: true })
+  identidadVerificada?: boolean | null;
+
+  // PENDIENTE, EN_REVISION, APROBADA, RECHAZADA, MENOR o ABANDONADA
+  @Field(() => String, { nullable: true })
+  verificacionEstado?: string | null;
+
   @Field(() => Date, { nullable: true })
   createdAt?: Date | null;
 }

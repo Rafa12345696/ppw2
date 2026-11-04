@@ -1,0 +1,17 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+import VerificarIdentidad from '../components/islands/VerificarIdentidad.jsx';
+---
+
+<Base titulo="Verificar identidad" descripcion="Verifica tu edad con tu INE y una selfie para comprar en Elixir.">
+  <div class="contenedor-angosto pagina">
+    <div class="encabezado-pagina">
+      <div>
+        <h1>Verifica tu identidad</h1>
+        <p>Un solo paso para confirmar que eres mayor de edad.</p>
+      </div>
+    </div>
+    <VerificarIdentidad client:load />
+  </div>
+</Base>

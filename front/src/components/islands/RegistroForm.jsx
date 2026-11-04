@@ -16,6 +16,7 @@ const MUTATION = `
         rol
         fechaNacimiento
         telefono
+        identidadVerificada
       }
     }
   }
@@ -52,7 +53,8 @@ export default function RegistroForm() {
         data: { nombre, email, password, fechaNacimiento },
       });
       setSesion(data.registrar.accessToken, data.registrar.usuario);
-      window.location.href = '/tienda';
+      // Siguiente paso: verificar la INE (si la tienda no lo pide, esa pagina deja seguir)
+      window.location.href = '/verificar-identidad?next=/tienda';
     } catch (err) {
       const mensaje = err.message || '';
       setError(

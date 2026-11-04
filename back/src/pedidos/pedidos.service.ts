@@ -14,6 +14,7 @@ import { Rol } from '../usuarios/usuarios.model.js';
 import type { UserAuthContext } from '../auth/types/auth.types.js';
 import { OBJECT_ID } from '../comun/object-id.js';
 import { esMayorDeEdad } from '../comun/edad.js';
+import { verificacionObligatoria } from '../identidad/didit.js';
 
 // Un pedido pagado solo avanza un paso a la vez
 const SIGUIENTE_ENVIO: Record<string, string> = {
@@ -70,8 +71,11 @@ export class PedidosService implements OnModuleInit, OnModuleDestroy {
   private async verificarEdad(usuarioId: string) {
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: usuarioId },
-      select: { fechaNacimiento: true },
+      select: { fechaNacimiento: true, identidadVerificada: true },
     });
+    if (verificacionObligatoria() && !usuario?.identidadVerificada) {
+      throw new BadRequestException('Verifica tu identidad con tu INE para poder comprar');
+    }
     if (!usuario?.fechaNacimiento) {
       throw new BadRequestException('Confirma tu fecha de nacimiento para poder comprar');
     }

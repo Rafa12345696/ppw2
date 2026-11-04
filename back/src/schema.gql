@@ -29,6 +29,8 @@ type Usuario {
   activo: Boolean
   fechaNacimiento: DateTime
   telefono: String
+  identidadVerificada: Boolean
+  verificacionEstado: String
   createdAt: DateTime
 }
 
@@ -271,6 +273,16 @@ type BitacoraPagina {
   paginas: Int!
 }
 
+type EstadoIdentidad {
+  requerida: Boolean!
+  verificada: Boolean!
+  estado: String
+}
+
+type SesionIdentidad {
+  url: String!
+}
+
 type Query {
   productos(skip: Int = 0, take: Int = 20): [Producto!]!
   productoPorId(id: ID!): Producto
@@ -293,6 +305,7 @@ type Query {
   usuariosPagina(filtro: FiltroUsuarios, pagina: Int, porPagina: Int): UsuariosPagina!
   categoriasAdmin: [CategoriaAdmin!]!
   bitacoraPagina(filtro: FiltroBitacora, pagina: Int, porPagina: Int): BitacoraPagina!
+  miVerificacion: EstadoIdentidad!
 }
 
 input FiltroProductos {
@@ -364,6 +377,7 @@ type Mutation {
   actualizarCategoria(id: ID!, nombre: String!): CategoriaAdmin!
   eliminarCategoria(id: ID!): Boolean!
   firmarSubidaImagen: FirmaSubida!
+  iniciarVerificacion: SesionIdentidad!
 }
 
 input CrearProductoInput {

@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { graphqlRequest } from '../../api';
 import { fechaMaximaNacimiento } from '../../edad';
+import { dinero } from '../../formato';
 import BotonesPago from './BotonesPago';
+import { IcoAlerta, IcoCheck, IcoReloj } from './Iconos';
 
 const MUTATION = `
   mutation($items: [ItemPedidoInput!]!) {
@@ -22,6 +24,8 @@ const CONFIRMAR_FECHA = `
     }
   }
 `;
+
+const MI_VERIFICACION = `query { miVerificacion { requerida verificada estado } }`;
 
 // Mensajes del servidor que si conviene mostrar tal cual
 const CONOCIDOS = ['Stock insuficiente', 'ya no existe', 'mayores de 18'];
@@ -46,25 +50,47 @@ function ConfirmarEdad({ token, onConfirmada }) {
   };
 
   return (
-    <form onSubmit={enviar} style={{ maxWidth: 360 }}>
-      <h2>Antes de continuar</h2>
-      <p style={{ margin: '0.5rem 0 1rem' }}>
-        Solo vendemos a mayores de 18 años. Confirma tu fecha de nacimiento (solo se pide una vez).
-      </p>
-      <input
-        type="date"
-        value={fecha}
-        onChange={(e) => setFecha(e.target.value)}
-        max={fechaMaximaNacimiento()}
-        required
-      />
-      {error && <p style={{ color: '#b00020', marginTop: '0.5rem' }}>{error}</p>}
-      <div style={{ marginTop: '1rem' }}>
-        <button type="submit" disabled={enviando}>
-          {enviando ? 'Guardando...' : 'Confirmar'}
-        </button>
+    <form onSubmit={enviar} className="tarjeta pila" style={{ maxWidth: 480 }}>
+      <div className="pila-sm">
+        <h2>Antes de continuar</h2>
+        <p className="texto-2">
+          Solo vendemos a mayores de 18 años. Confirma tu fecha de nacimiento; solo te la pedimos una vez.
+        </p>
       </div>
+      <div className="campo">
+        <label htmlFor="fecha-nac">Fecha de nacimiento</label>
+        <input
+          id="fecha-nac"
+          type="date"
+          value={fecha}
+          onChange={(e) => setFecha(e.target.value)}
+          max={fechaMaximaNacimiento()}
+          required
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? 'fecha-error' : undefined}
+        />
+        {error && <span id="fecha-error" className="error-campo" role="alert">{error}</span>}
+      </div>
+      <button type="submit" className="btn btn-primario" disabled={enviando}>
+        {enviando ? 'Guardando...' : 'Confirmar y continuar'}
+      </button>
     </form>
+  );
+}
+
+// La tienda pide INE + selfie antes de la primera compra
+function PedirVerificacion() {
+  return (
+    <div className="tarjeta pila" style={{ maxWidth: 520 }}>
+      <div className="pila-sm">
+        <h2>Verifica tu identidad para comprar</h2>
+        <p className="texto-2">
+          Solo vendemos a mayores de 18 años. Confirmalo una sola vez con una foto de tu INE y una selfie; tarda unos 2
+          minutos y tu carrito se queda como esta.
+        </p>
+      </div>
+      <a className="btn btn-primario" href="/verificar-identidad?next=/checkout">Verificar con mi INE</a>
+    </div>
   );
 }
 
@@ -79,6 +105,7 @@ export default function CheckoutContenido() {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
   const [listo, setListo] = useState(false);
+  const [verificacion, setVerificacion] = useState(null);
 
   useEffect(() => {
     if (!hidratado) return;
@@ -88,6 +115,14 @@ export default function CheckoutContenido() {
       setListo(true);
     }
   }, [usuario, hidratado]);
+
+  // Si la consulta falla se deja seguir: el servidor vuelve a revisar al crear el pedido
+  useEffect(() => {
+    if (!listo || !token) return;
+    graphqlRequest(MI_VERIFICACION, {}, token)
+      .then((data) => setVerificacion(data.miVerificacion))
+      .catch(() => setVerificacion({ requerida: false, verificada: false }));
+  }, [listo]);
 
   const total = carrito.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
 
@@ -106,7 +141,9 @@ export default function CheckoutContenido() {
       vaciarCarrito();
     } catch (e) {
       const mensaje = e.message || '';
-      if (mensaje.includes('fecha de nacimiento')) {
+      if (mensaje.includes('Verifica tu identidad')) {
+        setVerificacion({ requerida: true, verificada: false });
+      } else if (mensaje.includes('fecha de nacimiento')) {
         // El servidor no tiene la fecha (sesion vieja en este navegador): se vuelve a pedir
         actualizarUsuario({ fechaNacimiento: null });
       } else {
@@ -120,29 +157,44 @@ export default function CheckoutContenido() {
     setEnviando(false);
   };
 
-  if (!listo) {
-    return <p>Verificando sesion...</p>;
+  if (!listo || (!pedido && carrito.length > 0 && !verificacion)) {
+    return <div className="esqueleto" style={{ height: 240 }} aria-label="Verificando tu sesion" />;
   }
 
   if (pedido) {
     return (
-      <div>
-        <h2>Elige como pagar</h2>
-        <p>Pedido {pedido.id}</p>
-        <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Total: ${pedido.total}</p>
-        <p style={{ margin: '0.5rem 0 1rem' }}>
-          Reservamos tus productos durante 30 minutos. Si no pagas en ese tiempo, el pedido se cancela.
+      <div className="tarjeta pila" style={{ maxWidth: 560 }}>
+        <div className="alerta alerta-ok" role="status">
+          <IcoCheck /> Tu pedido se creo correctamente.
+        </div>
+        <div className="pila-sm">
+          <h2>Elige como pagar</h2>
+          <p className="texto-2">Pedido <span className="mono">{pedido.id.slice(-6).toUpperCase()}</span></p>
+          <p className="precio precio-grande num">{dinero.format(pedido.total)}</p>
+        </div>
+        <p className="fila texto-2" style={{ gap: 8 }}>
+          <IcoReloj /> Apartamos tus productos 30 minutos. Si no pagas en ese tiempo, el pedido se cancela solo.
         </p>
-        <BotonesPago pedidoId={pedido.id} />
-        <p style={{ marginTop: '1rem' }}>
-          <a href="/mis-pedidos">Pagar despues desde Mis pedidos</a>
-        </p>
+        <div className="acciones">
+          <BotonesPago pedidoId={pedido.id} />
+          <a className="btn btn-fantasma" href="/mis-pedidos">Pagar despues</a>
+        </div>
       </div>
     );
   }
 
   if (carrito.length === 0) {
-    return <p>Tu carrito esta vacio.</p>;
+    return (
+      <div className="vacio">
+        <h2>No hay nada que pagar</h2>
+        <p>Tu carrito esta vacio.</p>
+        <a className="btn btn-primario" href="/tienda">Ir a la tienda</a>
+      </div>
+    );
+  }
+
+  if (verificacion.requerida && !verificacion.verificada) {
+    return <PedirVerificacion />;
   }
 
   if (!usuario.fechaNacimiento) {
@@ -155,18 +207,40 @@ export default function CheckoutContenido() {
   }
 
   return (
-    <div>
-      <h2>Resumen de tu compra</h2>
-      {carrito.map((item) => (
-        <p key={item.id}>{item.nombre} x{item.cantidad} — ${item.precio * item.cantidad}</p>
-      ))}
-      <h3>Total: ${total}</h3>
+    <div className="compra">
+      <section className="tarjeta" aria-labelledby="revisa-titulo">
+        <h2 id="revisa-titulo" style={{ marginBottom: 12 }}>Revisa tu pedido</h2>
+        <ul className="lista-simple">
+          {carrito.map((item) => (
+            <li key={item.id}>
+              <span>
+                {item.nombre} <span className="texto-3">× {item.cantidad}</span>
+              </span>
+              <span className="num">{dinero.format(item.precio * item.cantidad)}</span>
+            </li>
+          ))}
+        </ul>
+        <p style={{ marginTop: 16 }}><a href="/carrito">Modificar carrito</a></p>
+      </section>
 
-      {error && <p style={{ color: '#b00020' }}>{error}</p>}
-
-      <button onClick={confirmar} disabled={enviando}>
-        {enviando ? 'Creando pedido...' : 'Continuar al pago'}
-      </button>
-    </div>  
+      <aside className="tarjeta resumen pila" aria-labelledby="total-titulo">
+        <h2 id="total-titulo">Total</h2>
+        <dl>
+          <dt>Comprador</dt>
+          <dd>{usuario.nombre}</dd>
+          <dt className="total">A pagar</dt>
+          <dd className="total">{dinero.format(total)}</dd>
+        </dl>
+        {error && (
+          <div className="alerta alerta-error" role="alert">
+            <IcoAlerta /> <span>{error}</span>
+          </div>
+        )}
+        <button type="button" className="btn btn-primario btn-bloque btn-lg" onClick={confirmar} disabled={enviando} aria-busy={enviando}>
+          {enviando ? 'Creando pedido...' : 'Continuar al pago'}
+        </button>
+        <p className="texto-3">Al continuar apartamos tus productos y eliges como pagar.</p>
+      </aside>
+    </div>
   );
 }
