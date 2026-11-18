@@ -74,7 +74,7 @@ function filtrar(lista, f, masVendidos, nombreCategoria) {
   return [...r].sort((a, b) => agotadosAlFinal(a, b) || (f.destacados.includes('vendidos') ? porVentas(a, b) : 0));
 }
 
-function Tarjeta({ p, categoria, resaltado, enCarrito, onAgregar, prioridad }) {
+function Tarjeta({ p, categoria, resaltado, enCarrito, onAgregar }) {
   const agotado = p.stock < 1;
   const tope = !agotado && enCarrito >= p.stock;
   return (
@@ -83,8 +83,8 @@ function Tarjeta({ p, categoria, resaltado, enCarrito, onAgregar, prioridad }) {
       <a href={`/producto/${p.id}`} className="producto-imagen" tabIndex={-1} aria-hidden="true">
         <Etiquetas producto={p} />
         {/* alt="": esta foto es un enlace oculto al lector; el nombre ya se lee en el enlace de texto.
-            Las primeras fotos se ven al abrir la pagina: se cargan de inmediato (mejora el LCP) */}
-        <Imagen url={p.imagen} alt="" anchos={[240, 360, 540]} sizes="(max-width: 600px) 50vw, 240px" prioridad={prioridad} />
+            Todas en lazy: en el catalogo el LCP es texto, asi que cargar fotos de inmediato solo le quita red */}
+        <Imagen url={p.imagen} alt="" anchos={[240, 360, 540]} sizes="(max-width: 600px) 50vw, 240px" />
       </a>
       <div className="producto-info">
         {categoria && <span className="producto-categoria">{categoria}</span>}
@@ -327,10 +327,9 @@ export default function CatalogoVivo({
           </div>
         ) : (
           <div className="grid-productos">
-            {visibles.map((p, i) => (
+            {visibles.map((p) => (
               <Tarjeta
                 key={p.id}
-                prioridad={i < 2}
                 p={p}
                 categoria={nombreCategoria(p.categoriaId)}
                 resaltado={destacado === p.id}
