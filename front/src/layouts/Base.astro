@@ -4,6 +4,8 @@
 import '../index.css';
 import TopBar from '../components/TopBar.astro';
 import AdminNav from '../components/AdminNav.astro';
+// PWA: etiqueta <link rel="manifest"> generada por @vite-pwa/astro
+import { pwaInfo } from 'virtual:pwa-info';
 
 interface Props {
   titulo: string;
@@ -52,8 +54,11 @@ const imagenCompartir = new URL(imagen || '/imagenes/DonJulio70.png', Astro.site
     <meta property="og:image" content={imagenCompartir} />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <meta name="theme-color" content="#1c1c1c" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- PWA: color de marca (--c-marca), iconos y manifiesto -->
+    <meta name="theme-color" content="#6b1d2a" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    {pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -61,6 +66,21 @@ const imagenCompartir = new URL(imagen || '/imagenes/DonJulio70.png', Astro.site
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
     />
     <slot name="head" />
+
+    <!-- Guarda el aviso "se puede instalar" aunque llegue antes de que cargue el boton Instalar app -->
+    <script is:inline>
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.__avisoInstalar = e;
+        window.dispatchEvent(new Event('elixir:instalable'));
+      });
+    </script>
+
+    <!-- Registra el Service Worker (se actualiza solo al publicar una version nueva) -->
+    <script>
+      import { registerSW } from 'virtual:pwa-register';
+      registerSW({ immediate: true });
+    </script>
   </head>
   <body>
     <a class="saltar no-imprimir" href="#contenido">Saltar al contenido</a>

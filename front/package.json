@@ -30,5 +30,8 @@
   },
   "overrides": {
     "react-is": "$react"
+  },
+  "devDependencies": {
+    "@vite-pwa/astro": "^2.0.3"
   }
 }
