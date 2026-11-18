@@ -1,0 +1,16 @@
+# Elixir - instrucciones para buscadores
+User-agent: *
+Allow: /
+
+# Paginas privadas o de compra: no tienen nada que indexar
+Disallow: /admin
+Disallow: /carrito
+Disallow: /checkout
+Disallow: /pagar
+Disallow: /pago/
+Disallow: /comprobante
+Disallow: /mis-pedidos
+Disallow: /verificar-identidad
+Disallow: /restablecer-password
+
+Sitemap: https://proyectow2.netlify.app/sitemap.xml

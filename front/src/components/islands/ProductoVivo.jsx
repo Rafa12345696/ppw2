@@ -82,6 +82,8 @@ export default function ProductoVivo({ producto: inicial }) {
           alt={producto.nombre}
           anchos={[480, 720, 960, 1200]}
           sizes="(max-width: 900px) 100vw, 640px"
+          ancho={640}
+          alto={640}
           prioridad
         />
       </div>

@@ -74,7 +74,7 @@ function filtrar(lista, f, masVendidos, nombreCategoria) {
   return [...r].sort((a, b) => agotadosAlFinal(a, b) || (f.destacados.includes('vendidos') ? porVentas(a, b) : 0));
 }
 
-function Tarjeta({ p, categoria, resaltado, enCarrito, onAgregar }) {
+function Tarjeta({ p, categoria, resaltado, enCarrito, onAgregar, prioridad }) {
   const agotado = p.stock < 1;
   const tope = !agotado && enCarrito >= p.stock;
   return (
@@ -82,7 +82,8 @@ function Tarjeta({ p, categoria, resaltado, enCarrito, onAgregar }) {
       {/* La imagen repite el enlace del nombre: se omite del tabulador para no duplicarlo */}
       <a href={`/producto/${p.id}`} className="producto-imagen" tabIndex={-1} aria-hidden="true">
         <Etiquetas producto={p} />
-        <Imagen url={p.imagen} alt="" anchos={[240, 360, 540]} sizes="(max-width: 600px) 50vw, 240px" />
+        {/* Las primeras fotos se ven al abrir la pagina: se cargan de inmediato (mejora el LCP) */}
+        <Imagen url={p.imagen} alt={p.nombre} anchos={[240, 360, 540]} sizes="(max-width: 600px) 50vw, 240px" prioridad={prioridad} />
       </a>
       <div className="producto-info">
         {categoria && <span className="producto-categoria">{categoria}</span>}
@@ -325,9 +326,10 @@ export default function CatalogoVivo({
           </div>
         ) : (
           <div className="grid-productos">
-            {visibles.map((p) => (
+            {visibles.map((p, i) => (
               <Tarjeta
                 key={p.id}
+                prioridad={i < 2}
                 p={p}
                 categoria={nombreCategoria(p.categoriaId)}
                 resaltado={destacado === p.id}

@@ -32,9 +32,35 @@ try {
 } catch (e) {
   error = true;
 }
+
+// Datos estructurados (JSON-LD Product): Google lee nombre, foto, precio y si hay existencias
+const jsonLd = producto && {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: producto.nombre,
+  sku: producto.id,
+  ...(producto.descripcion && { description: producto.descripcion }),
+  ...(producto.imagen && { image: new URL(producto.imagen, Astro.site ?? Astro.url).href }),
+  ...(producto.categoria && { category: producto.categoria.nombre }),
+  offers: {
+    '@type': 'Offer',
+    url: new URL(Astro.url.pathname, Astro.site ?? Astro.url).href,
+    price: producto.precio.toFixed(2),
+    priceCurrency: 'MXN',
+    availability: producto.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+    itemCondition: 'https://schema.org/NewCondition',
+  },
+};
+// "<" escapado para que un texto del producto no pueda cerrar la etiqueta <script>
+const jsonLdTexto = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : '';
+
+const descripcion = producto
+  ? producto.descripcion || `Compra ${producto.nombre} en linea en Elixir con pago seguro.`
+  : undefined;
 ---
 
-<Base titulo={producto?.nombre || 'Producto'} descripcion={producto?.descripcion}>
+<Base titulo={producto?.nombre || 'Producto'} descripcion={descripcion} imagen={producto?.imagen} tipo={producto ? 'product' : 'website'}>
+  {jsonLd && <script is:inline slot="head" type="application/ld+json" set:html={jsonLdTexto} />}
   <div class="contenedor pagina">
     <nav class="migas" aria-label="Ruta">
       <ol>

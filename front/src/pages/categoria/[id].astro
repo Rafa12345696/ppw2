@@ -44,9 +44,10 @@ try {
 }
 
 const nombre = categoria?.nombre || 'Categoria';
+const descripcion = `Compra ${nombre.toLowerCase()} en linea en Elixir: ${productos.length} productos con precio, existencias y pago seguro.`;
 ---
 
-<Base titulo={nombre}>
+<Base titulo={nombre} descripcion={descripcion}>
   <div class="contenedor pagina">
     <nav class="migas" aria-label="Ruta">
       <ol>

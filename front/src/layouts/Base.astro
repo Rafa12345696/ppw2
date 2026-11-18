@@ -10,6 +10,9 @@ interface Props {
   descripcion?: string;
   admin?: boolean;       // agrega la navegacion del panel
   sinCabecera?: boolean; // portada: sin barra superior ni pie
+  imagen?: string;       // foto para compartir en redes (Open Graph)
+  tipo?: 'website' | 'product';
+  indexar?: boolean;     // false en paginas privadas (carrito, pedidos, admin...)
 }
 
 const {
@@ -17,7 +20,16 @@ const {
   descripcion = 'Elixir: tienda en linea de licores con pago seguro y seguimiento de tu pedido.',
   admin = false,
   sinCabecera = false,
+  imagen,
+  tipo = 'website',
+  indexar = !admin,
 } = Astro.props;
+
+// SEO: una sola URL oficial por pagina (sin ?q=, ?destacado=, etc.) y textos cortos
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+const tituloCompleto = `${titulo} · Elixir`;
+const resumen = descripcion.length > 160 ? `${descripcion.slice(0, 157).trimEnd()}...` : descripcion;
+const imagenCompartir = new URL(imagen || '/imagenes/DonJulio70.png', Astro.site ?? Astro.url).href;
 ---
 
 <!doctype html>
@@ -25,16 +37,39 @@ const {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{titulo} · Elixir</title>
-    <meta name="description" content={descripcion} />
+    <title>{tituloCompleto}</title>
+    <meta name="description" content={resumen} />
+    <link rel="canonical" href={canonical} />
+    {!indexar && <meta name="robots" content="noindex" />}
+
+    <!-- Open Graph: como se ve el enlace al compartirlo (WhatsApp, Facebook, X) -->
+    <meta property="og:type" content={tipo} />
+    <meta property="og:site_name" content="Elixir" />
+    <meta property="og:locale" content="es_MX" />
+    <meta property="og:title" content={tituloCompleto} />
+    <meta property="og:description" content={resumen} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imagenCompartir} />
+    <meta name="twitter:card" content="summary_large_image" />
+
     <meta name="theme-color" content="#1c1c1c" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Las letras se cargan sin bloquear el primer pintado (mientras, se usa la letra del sistema) -->
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+      />
+    </noscript>
+    <slot name="head" />
   </head>
   <body>
     <a class="saltar no-imprimir" href="#contenido">Saltar al contenido</a>

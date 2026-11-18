@@ -1,0 +1,106 @@
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Si llega otro push mientras corre, se cancela la corrida vieja
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint, pruebas y build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: back
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: back/package-lock.json
+
+      - name: Instalar dependencias (exactas del package-lock)
+        run: npm ci
+
+      - name: Generar cliente de Prisma
+        run: npx prisma generate
+
+      - name: Calidad de codigo (oxlint)
+        run: npm run lint
+
+      - name: Pruebas unitarias
+        run: npm test
+
+      - name: Pruebas de integracion (app completa con base falsa)
+        run: npm run test:e2e
+
+      - name: Build de produccion
+        run: npm run build
+
+  frontend:
+    name: Frontend (build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Instalar dependencias (exactas del package-lock)
+        run: npm ci
+
+      - name: Build de produccion
+        run: npm run build
+        env:
+          # Solo para comprobar que compila; el deploy real usa la variable de Netlify
+          PUBLIC_API_URL: https://ejemplo.invalid/graphql
+
+  desplegar-frontend:
+    name: Desplegar frontend en Netlify
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: front
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # Construye con las variables de produccion de Netlify (PUBLIC_API_URL) y publica
+      - name: Build y deploy a produccion
+        run: >
+          npx --yes netlify-cli@27 deploy
+          --prod
+          --context production
+          --site "$NETLIFY_SITE_ID"
+          --auth "$NETLIFY_AUTH_TOKEN"
+          --message "CI ${{ github.sha }}"
+        env:
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}

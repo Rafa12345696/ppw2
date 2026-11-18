@@ -3,6 +3,9 @@ import CartBadge from './islands/CartBadge.jsx';
 import SesionInfo from './islands/SesionInfo.jsx';
 import AvisoEdad from './islands/AvisoEdad.jsx';
 
+// client:idle en sesion y carrito: no hacen falta para pintar la pagina, se activan cuando el navegador se desocupa.
+// AvisoEdad se queda en client:load porque debe salir antes de que el visitante use la tienda.
+
 // En el panel de admin no se muestran los apartados de la tienda
 const { admin = false } = Astro.props;
 
@@ -39,10 +42,10 @@ const apartados = [
     </form>
 
     <div class="cuenta">
-      <SesionInfo client:load />
+      <SesionInfo client:idle />
       <a href="/carrito" class="btn btn-primario">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 8h14l-1 12H6z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg>
-        Carrito <CartBadge client:load />
+        Carrito <CartBadge client:idle />
       </a>
     </div>
   </div>

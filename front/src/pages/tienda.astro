@@ -49,7 +49,10 @@ const TITULOS = { promo: 'Promociones', premium: 'Licores premium', vendidos: 'L
 const titulo = busqueda ? `Resultados para “${busqueda}”` : TITULOS[destacado] || 'Todos los licores';
 ---
 
-<Base titulo={busqueda ? `Buscar: ${busqueda}` : TITULOS[destacado] || 'Tienda'}>
+<Base
+  titulo={busqueda ? `Buscar: ${busqueda}` : TITULOS[destacado] || 'Tienda'}
+  descripcion={`Catalogo de Elixir: ${todosLosProductos.length} licores entre tequila, whisky, mezcal y mas. Compra en linea con pago seguro.`}
+>
   <div class="contenedor pagina">
     <nav class="migas" aria-label="Ruta">
       <ol>
