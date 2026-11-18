@@ -82,8 +82,9 @@ function Tarjeta({ p, categoria, resaltado, enCarrito, onAgregar, prioridad }) {
       {/* La imagen repite el enlace del nombre: se omite del tabulador para no duplicarlo */}
       <a href={`/producto/${p.id}`} className="producto-imagen" tabIndex={-1} aria-hidden="true">
         <Etiquetas producto={p} />
-        {/* Las primeras fotos se ven al abrir la pagina: se cargan de inmediato (mejora el LCP) */}
-        <Imagen url={p.imagen} alt={p.nombre} anchos={[240, 360, 540]} sizes="(max-width: 600px) 50vw, 240px" prioridad={prioridad} />
+        {/* alt="": esta foto es un enlace oculto al lector; el nombre ya se lee en el enlace de texto.
+            Las primeras fotos se ven al abrir la pagina: se cargan de inmediato (mejora el LCP) */}
+        <Imagen url={p.imagen} alt="" anchos={[240, 360, 540]} sizes="(max-width: 600px) 50vw, 240px" prioridad={prioridad} />
       </a>
       <div className="producto-info">
         {categoria && <span className="producto-categoria">{categoria}</span>}

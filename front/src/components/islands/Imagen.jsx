@@ -6,9 +6,9 @@ import { IcoBotella } from './Iconos';
 export default function Imagen({ url, alt, sizes = '100vw', anchos, prioridad = false, ancho = 400, alto = 500 }) {
   const [fallo, setFallo] = useState(false);
 
-  // Una direccion que no es http(s) ni empieza con "/" (por ejemplo un texto suelto) se trata como sin imagen:
+  // Una direccion que no es http(s) ni una ruta del sitio (por ejemplo "a" o "/" solo) se trata como sin imagen:
   // si no, el navegador la pide al servidor, recibe un 404 y Lighthouse baja Best Practices
-  const valida = typeof url === 'string' && /^(https?:\/\/|\/)/.test(url);
+  const valida = typeof url === 'string' && /^(https?:\/\/|\/[^/])/.test(url);
 
   if (!valida || fallo) {
     return (

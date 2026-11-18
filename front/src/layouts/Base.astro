@@ -56,19 +56,10 @@ const imagenCompartir = new URL(imagen || '/imagenes/DonJulio70.png', Astro.site
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Las letras se cargan sin bloquear el primer pintado (mientras, se usa la letra del sistema) -->
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
-      media="print"
-      onload="this.media='all'"
     />
-    <noscript>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
-      />
-    </noscript>
     <slot name="head" />
   </head>
   <body>
